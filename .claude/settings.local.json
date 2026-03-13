@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import docx\" 2>&1 || python3 -m pip install python-docx 2>&1 | tail -5)",
+      "Bash(python -c \"import docx\" 2>&1 || python -m pip install python-docx 2>&1 | tail -5)",
+      "Bash(python -c \"\nimport docx\ndoc = docx.Document\\('C:/Users/tmswa/OneDrive/Documents/hiker app/Software Requirements Specification\\(updated\\).docx'\\)\nfor para in doc.paragraphs:\n    print\\(para.text\\)\n\" 2>&1)",
+      "Bash(python -c \"import tempfile; print\\(tempfile.gettempdir\\(\\)\\)\")",
+      "Bash(python \"C:\\\\Users\\\\tmswa\\\\AppData\\\\Local\\\\Temp\\\\gen1.py\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && python _master_gen.py)",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && python _gen.py)",
+      "Bash(python -c \"\nbase = 'C:/Users/tmswa/OneDrive/Documents/hiker app'\ngen = base + '/_gen2.py'\nwith open\\(gen, 'w'\\) as f:\n    f.write\\('# Phase 2 stub\\\\n'\\)\nprint\\('gen2 ready'\\)\n\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && python _gen2.py)",
+      "Bash(python -c \"\nbase = 'C:/Users/tmswa/OneDrive/Documents/hiker app'\nwith open\\(base + '/_gen3.py', 'w'\\) as f:\n    f.write\\('# Phase 3 stub\\\\n'\\)\nprint\\('gen3 ready'\\)\n\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && python _gen3.py)",
+      "Bash(python -c \"\nbase = 'C:/Users/tmswa/OneDrive/Documents/hiker app'\nfor i in ['4a', '4b']:\n    with open\\(base + '/_gen' + i + '.py', 'w'\\) as f:\n        f.write\\('# Phase ' + i + ' stub\\\\n'\\)\nprint\\('gen4a and gen4b ready'\\)\n\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && python _gen4a.py && python _gen4b.py)",
+      "Bash(python -c \"\nbase = 'C:/Users/tmswa/OneDrive/Documents/hiker app'\nfor i in ['5a', '5b']:\n    with open\\(base + '/_gen' + i + '.py', 'w'\\) as f:\n        f.write\\('# Phase ' + i + ' stub\\\\n'\\)\nprint\\('gen5 stubs ready'\\)\n\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && python _gen5a.py && python _gen5b.py)",
+      "Bash(python -c \"\nbase = 'C:/Users/tmswa/OneDrive/Documents/hiker app'\nwith open\\(base + '/_gen6.py', 'w'\\) as f:\n    f.write\\('# Phase 6 stub\\\\n'\\)\nprint\\('gen6 ready'\\)\n\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && python _gen6.py)",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && rm -f _gen*.py _master_gen.py _generate.py _trails_data.json && echo \"Cleanup done\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && echo \"=== Project File Summary ===\" && echo \"\" && echo \"Frontend:\" && find src -name \"*.js\" | wc -l && echo \"files\" && find src -name \"*.js\" -exec wc -l {} + | tail -1 && echo \"\" && echo \"Backend:\" && find backend -name \"*.js\" | wc -l && echo \"files\" && find backend -name \"*.js\" -exec wc -l {} + | tail -1 && echo \"\" && echo \"Config files:\" && ls -la *.js *.json 2>/dev/null | wc -l && echo \"\" && echo \"=== Total Lines of Code ===\" && find . \\\\\\( -name \"*.js\" -o -name \"*.json\" \\\\\\) -not -path \"./.claude/*\" -exec wc -l {} + | tail -1)",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && npm install 2>&1 | tail -20)",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app/backend\" && npm install 2>&1 | tail -10)",
+      "Bash(cd \"/c/Users/tmswa/OneDrive/Documents/hiker app/backend\" && npm install 2>&1)",
+      "Bash(cd \"/c/Users/tmswa/OneDrive/Documents/hiker app/backend\" && node seed.js 2>&1)",
+      "Bash(cd \"/c/Users/tmswa/OneDrive/Documents/hiker app\" && npx expo start 2>&1)",
+      "Bash(cd \"/c/Users/tmswa/OneDrive/Documents/hiker app\" && npx expo install expo@^54 --fix 2>&1)",
+      "Bash(cd \"/c/Users/tmswa/OneDrive/Documents/hiker app\" && npm install babel-preset-expo 2>&1)",
+      "Bash(sleep 2 && curl -s http://localhost:3000/api/health 2>/dev/null || echo \"Backend not ready yet\")",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && npx expo start --tunnel 2>&1)",
+      "Bash(npm install:*)",
+      "Bash(cd \"C:/Users/tmswa/OneDrive/Documents/hiker app\" && npx expo start 2>&1)",
+      "Bash(ipconfig | grep -A 5 \"Wireless\\\\|Wi-Fi\\\\|Ethernet\" | grep \"IPv4\")",
+      "Bash(ipconfig 2>&1 | head -50)",
+      "Bash(rsync -av --exclude='node_modules' --exclude='.expo' --exclude='hiking_navigator.db' \"C:/Users/tmswa/OneDrive/Documents/hiker app/\" \"/c/Projects/hiker-app/\" 2>&1)"
+    ]
+  }
+}
