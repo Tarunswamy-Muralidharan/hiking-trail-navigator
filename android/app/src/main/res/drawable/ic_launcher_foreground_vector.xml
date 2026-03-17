@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Mountain silhouette - main peak -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 L74,68 L82,58 L92,72 L16,72 L30,52 L36,60 Z" />
+
+    <!-- Snow cap on main peak -->
+    <path
+        android:fillColor="#E8F5E9"
+        android:pathData="M54,28 L60,40 L48,40 Z" />
+
+    <!-- Trail path (winding line) -->
+    <path
+        android:strokeColor="#FFD54F"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M34,72 Q40,60 46,65 Q52,70 54,58 Q56,48 58,52 Q62,58 54,38" />
+
+    <!-- Sun/compass circle -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M78,32 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0" />
+
+    <!-- Compass needle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M78,26 L79.5,32 L78,38 L76.5,32 Z" />
+
+    <!-- Pine trees -->
+    <path
+        android:fillColor="#C8E6C9"
+        android:pathData="M24,72 L28,60 L22,64 L26,54 L20,58 L24,48 L28,58 L22,54 L26,64 L20,60 L24,72 Z" />
+
+    <path
+        android:fillColor="#C8E6C9"
+        android:pathData="M84,72 L87,63 L83,66 L86,58 L82,61 L85,54 L88,61 L84,58 L87,66 L83,63 L84,72 Z" />
+
+    <!-- Hiker figure (simplified) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M44,44 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M44,47 L44,56 M44,50 L40,54 M44,50 L48,46 M44,56 L41,63 M44,56 L47,63" />
+
+    <!-- Walking stick -->
+    <path
+        android:strokeColor="#FFD54F"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:strokeLineCap="round"
+        android:pathData="M48,46 L50,64" />
+
+    <!-- Ground line -->
+    <path
+        android:fillColor="#A5D6A7"
+        android:pathData="M10,72 L98,72 L98,78 L10,78 Z" />
+
+</vector>
