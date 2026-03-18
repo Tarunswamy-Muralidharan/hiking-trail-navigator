@@ -38,6 +38,7 @@ class DatabaseIntegrationTest {
     private lateinit var emergencyContactDao: EmergencyContactDao
     private lateinit var activeHikerDao: ActiveHikerDao
     private lateinit var routeWarningDao: RouteWarningDao
+    private lateinit var sosAlertDao: SosAlertDao
 
     @Before
     fun setUp() {
@@ -54,6 +55,7 @@ class DatabaseIntegrationTest {
         emergencyContactDao = database.emergencyContactDao()
         activeHikerDao = database.activeHikerDao()
         routeWarningDao = database.routeWarningDao()
+        sosAlertDao = database.sosAlertDao()
     }
 
     @After
@@ -301,6 +303,84 @@ class DatabaseIntegrationTest {
         val trail1Warnings = routeWarningDao.getWarningsForTrail("trail-1").first()
         assertEquals(1, trail1Warnings.size)
         assertEquals("Landslide", trail1Warnings[0].warningType)
+    }
+
+    // ==================== SOS Alert Tests (Session 10 - Admin Dashboard) ====================
+
+    @Test
+    fun insertAndResolveSosAlert() = runTest {
+        val alert = SosAlertEntity(
+            id = "sos-1",
+            hikerName = "Poornesh",
+            trailId = "trail-1",
+            trailName = "Vellingiri Hills",
+            alertType = "SOS_BUTTON",
+            latitude = 10.95,
+            longitude = 76.82,
+            timestamp = System.currentTimeMillis(),
+            isResolved = false,
+            message = "Hiker pressed SOS button"
+        )
+
+        sosAlertDao.insert(alert)
+        val activeAlerts = sosAlertDao.getActiveAlerts().first()
+        assertEquals(1, activeAlerts.size)
+        assertEquals("SOS_BUTTON", activeAlerts[0].alertType)
+        assertEquals("Poornesh", activeAlerts[0].hikerName)
+
+        // Resolve the alert
+        sosAlertDao.resolve("sos-1")
+        val afterResolve = sosAlertDao.getActiveAlerts().first()
+        assertTrue(afterResolve.isEmpty()) // Resolved alerts not shown
+    }
+
+    @Test
+    fun multipleSosAlertTypes() = runTest {
+        val alerts = listOf(
+            SosAlertEntity(
+                id = "sos-1", hikerName = "Hiker1", trailId = "t1", trailName = "Trail1",
+                alertType = "SOS_BUTTON", latitude = 11.0, longitude = 76.9,
+                timestamp = System.currentTimeMillis(), message = "SOS button"
+            ),
+            SosAlertEntity(
+                id = "sos-2", hikerName = "Hiker2", trailId = "t2", trailName = "Trail2",
+                alertType = "FALL_DETECTED", latitude = 11.1, longitude = 77.0,
+                timestamp = System.currentTimeMillis(), message = "Fall detected"
+            ),
+            SosAlertEntity(
+                id = "sos-3", hikerName = "Hiker3", trailId = "t1", trailName = "Trail1",
+                alertType = "CHECKIN_MISSED", latitude = 10.9, longitude = 76.8,
+                timestamp = System.currentTimeMillis(), message = "Missed check-in"
+            )
+        )
+
+        alerts.forEach { sosAlertDao.insert(it) }
+        val active = sosAlertDao.getActiveAlerts().first()
+        assertEquals(3, active.size)
+
+        // Resolve one
+        sosAlertDao.resolve("sos-2")
+        val remaining = sosAlertDao.getActiveAlerts().first()
+        assertEquals(2, remaining.size)
+    }
+
+    // ==================== Trail Delete Test (Session 10 - Admin CRUD) ====================
+
+    @Test
+    fun deleteTrailById() = runTest {
+        trailDao.insertTrails(listOf(
+            createTrailEntity("t1", "Trail to Keep"),
+            createTrailEntity("t2", "Trail to Delete")
+        ))
+
+        val before = trailDao.getAllTrails().first()
+        assertEquals(2, before.size)
+
+        trailDao.deleteTrail("t2")
+
+        val after = trailDao.getAllTrails().first()
+        assertEquals(1, after.size)
+        assertEquals("Trail to Keep", after[0].name)
     }
 
     // ==================== Helper ====================

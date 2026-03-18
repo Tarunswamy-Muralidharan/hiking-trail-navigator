@@ -5,6 +5,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class Screen(val route: String) {
+    data object Login : Screen("login")
     data object Home : Screen("home")
     data object TrailList : Screen("trails")
     data object TrailDetail : Screen("trail/{trailId}") {
@@ -28,6 +29,8 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object AdminLogin : Screen("admin_login")
     data object AdminDashboard : Screen("admin_dashboard")
+    data object AdminManageTrails : Screen("admin_manage_trails")
+    data object AdminAddTrail : Screen("admin_add_trail")
 }
 
 enum class BottomNavItem(

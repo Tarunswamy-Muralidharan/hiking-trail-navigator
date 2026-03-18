@@ -15,9 +15,10 @@ import com.hikingtrailnavigator.app.data.local.entity.*
         HikeActivityEntity::class,
         EmergencyContactEntity::class,
         ActiveHikerSessionEntity::class,
-        RouteWarningEntity::class
+        RouteWarningEntity::class,
+        SosAlertEntity::class
     ],
-    version = 2,
+    version = 7,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -30,4 +31,5 @@ abstract class HikerDatabase : RoomDatabase() {
     abstract fun emergencyContactDao(): EmergencyContactDao
     abstract fun activeHikerDao(): ActiveHikerDao
     abstract fun routeWarningDao(): RouteWarningDao
+    abstract fun sosAlertDao(): SosAlertDao
 }

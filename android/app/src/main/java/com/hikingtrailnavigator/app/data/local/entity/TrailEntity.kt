@@ -28,7 +28,9 @@ data class TrailEntity(
     val region: String,
     val popularity: Int,
     val coverageStatus: String,
-    val elevationProfile: String // JSON
+    val elevationProfile: String, // JSON
+    val schedule: String = "Open all days",
+    val checkInIntervalMinutes: Int = 30
 )
 
 @Entity(tableName = "danger_zones")
@@ -103,6 +105,20 @@ data class ActiveHikerSessionEntity(
     val missedCheckIns: Int = 0
 )
 
+@Entity(tableName = "sos_alerts")
+data class SosAlertEntity(
+    @PrimaryKey val id: String,
+    val hikerName: String,
+    val trailId: String,
+    val trailName: String,
+    val alertType: String,  // SOS_BUTTON, FALL_DETECTED, CHECKIN_MISSED
+    val latitude: Double,
+    val longitude: Double,
+    val timestamp: Long,
+    val isResolved: Boolean = false,
+    val message: String = ""
+)
+
 @Entity(tableName = "route_warnings")
 data class RouteWarningEntity(
     @PrimaryKey val id: String,
@@ -154,7 +170,9 @@ fun TrailEntity.toDomain(): Trail {
         region = region,
         popularity = popularity,
         coverageStatus = CoverageStatus.valueOf(coverageStatus),
-        elevationProfile = gson.fromJson(elevationProfile, elevType)
+        elevationProfile = gson.fromJson(elevationProfile, elevType),
+        schedule = schedule,
+        checkInIntervalMinutes = checkInIntervalMinutes
     )
 }
 
@@ -178,7 +196,9 @@ fun Trail.toEntity(): TrailEntity {
         region = region,
         popularity = popularity,
         coverageStatus = coverageStatus.name,
-        elevationProfile = gson.toJson(elevationProfile)
+        elevationProfile = gson.toJson(elevationProfile),
+        schedule = schedule,
+        checkInIntervalMinutes = checkInIntervalMinutes
     )
 }
 

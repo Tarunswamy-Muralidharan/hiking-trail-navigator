@@ -23,6 +23,9 @@ interface TrailDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTrail(trail: TrailEntity)
+
+    @Query("DELETE FROM trails WHERE id = :id")
+    suspend fun deleteTrail(id: String)
 }
 
 @Dao
@@ -113,6 +116,18 @@ interface ActiveHikerDao {
 
     @Query("SELECT COUNT(*) FROM active_hiker_sessions WHERE isActive = 1")
     suspend fun getActiveCount(): Int
+}
+
+@Dao
+interface SosAlertDao {
+    @Query("SELECT * FROM sos_alerts WHERE isResolved = 0 ORDER BY timestamp DESC")
+    fun getActiveAlerts(): Flow<List<com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(alert: com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity)
+
+    @Query("UPDATE sos_alerts SET isResolved = 1 WHERE id = :id")
+    suspend fun resolve(id: String)
 }
 
 @Dao

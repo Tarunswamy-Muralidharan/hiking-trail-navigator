@@ -37,6 +37,9 @@ fun HomeScreen(
             centerLat = uiState.mapCenterLat,
             centerLng = uiState.mapCenterLng,
             zoomLevel = uiState.mapZoom,
+            showMyLocation = true,
+            useSatellite = uiState.useSatellite,
+            cameraMoveKey = uiState.cameraMoveKey,
             markers = buildList {
                 // Trail markers
                 addAll(uiState.trails.map { trail ->
@@ -70,6 +73,24 @@ fun HomeScreen(
                         )
                     })
                 }
+                // Danger zone center markers (red, with zone name)
+                if (uiState.showDangerZones) {
+                    addAll(uiState.dangerZones.map { zone ->
+                        MapMarker(
+                            position = zone.center,
+                            title = zone.name,
+                            snippet = "${zone.severity} - ${zone.description}",
+                            color = AndroidColor.rgb(211, 47, 47)
+                        )
+                    })
+                }
+            },
+            polylines = uiState.trails.map { trail ->
+                MapPolyline(
+                    points = trail.coordinates,
+                    color = AndroidColor.rgb(46, 125, 50), // green safe path
+                    width = 6f
+                )
             },
             circles = buildList {
                 if (uiState.showDangerZones) {
@@ -315,6 +336,34 @@ fun HomeScreen(
                                 MiniStat("Rating", "${trail.rating}")
                             }
 
+                            // Schedule info
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(
+                                        if (trail.schedule.contains("Closed"))
+                                            Color(0xFFFFF3E0) else Color(0xFFE8F5E9)
+                                    )
+                                    .padding(10.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Schedule, null,
+                                    tint = if (trail.schedule.contains("Closed"))
+                                        Color(0xFFE65100) else Color(0xFF2E7D32),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    trail.schedule,
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF424242),
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
                             Spacer(Modifier.height(12.dp))
 
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -421,13 +470,40 @@ fun HomeScreen(
             }
         }
 
-        // SOS Button
-        FloatingActionButton(
-            onClick = onSosClick,
-            containerColor = Danger,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+        // Map controls + SOS buttons
+        Column(
+            modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.End
         ) {
-            Text("SOS", color = Color.White, fontWeight = FontWeight.Bold)
+            // Satellite / Map toggle
+            SmallFloatingActionButton(
+                onClick = { viewModel.toggleSatellite() },
+                containerColor = Color.White,
+                contentColor = Color(0xFF424242)
+            ) {
+                Icon(
+                    if (uiState.useSatellite) Icons.Default.Map else Icons.Default.Satellite,
+                    contentDescription = if (uiState.useSatellite) "Map view" else "Satellite view"
+                )
+            }
+
+            // My Location button
+            SmallFloatingActionButton(
+                onClick = { viewModel.centerOnMyLocation() },
+                containerColor = Color.White,
+                contentColor = Color(0xFF1976D2)
+            ) {
+                Icon(Icons.Default.MyLocation, contentDescription = "My Location")
+            }
+
+            // SOS Button
+            FloatingActionButton(
+                onClick = onSosClick,
+                containerColor = Danger
+            ) {
+                Text("SOS", color = Color.White, fontWeight = FontWeight.Bold)
+            }
         }
 
         // Trail count info (show when no place selected)

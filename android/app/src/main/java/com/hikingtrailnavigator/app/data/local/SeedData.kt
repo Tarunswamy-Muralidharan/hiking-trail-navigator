@@ -36,7 +36,8 @@ object SeedData {
                 ElevationPoint(0.0, 340), ElevationPoint(3.0, 550), ElevationPoint(6.0, 800),
                 ElevationPoint(9.0, 1050), ElevationPoint(12.0, 1250), ElevationPoint(15.0, 1450),
                 ElevationPoint(18.0, 1680), ElevationPoint(22.0, 1840)
-            )
+            ),
+            schedule = "Open: Mon-Sat (6 AM - 4 PM) | Closed: Sunday, Full Moon days"
         ),
         Trail(
             id = "trail_2",
@@ -60,7 +61,8 @@ object SeedData {
             elevationProfile = listOf(
                 ElevationPoint(0.0, 420), ElevationPoint(2.5, 550), ElevationPoint(5.0, 680),
                 ElevationPoint(7.5, 780), ElevationPoint(10.0, 870)
-            )
+            ),
+            schedule = "Open: Tue-Sun (7 AM - 5 PM) | Closed: Monday"
         ),
         Trail(
             id = "trail_3",
@@ -84,7 +86,8 @@ object SeedData {
             elevationProfile = listOf(
                 ElevationPoint(0.0, 780), ElevationPoint(3.5, 950), ElevationPoint(7.0, 1180),
                 ElevationPoint(10.5, 1350), ElevationPoint(14.0, 1480)
-            )
+            ),
+            schedule = "Open: Wed-Mon (6 AM - 3 PM) | Closed: Tuesday (Forest dept maintenance)"
         ),
         Trail(
             id = "trail_4",
@@ -108,7 +111,8 @@ object SeedData {
             elevationProfile = listOf(
                 ElevationPoint(0.0, 1300), ElevationPoint(2.0, 1150), ElevationPoint(4.0, 980),
                 ElevationPoint(6.0, 850), ElevationPoint(8.0, 800)
-            )
+            ),
+            schedule = "Open: All days (8 AM - 6 PM) | Closed: During heavy rain alerts"
         ),
         Trail(
             id = "trail_5",
@@ -132,7 +136,8 @@ object SeedData {
             elevationProfile = listOf(
                 ElevationPoint(0.0, 2437), ElevationPoint(1.0, 2520), ElevationPoint(2.0, 2590),
                 ElevationPoint(3.0, 2637)
-            )
+            ),
+            schedule = "Open: All days (7 AM - 5:30 PM)"
         ),
         Trail(
             id = "trail_6",
@@ -156,7 +161,8 @@ object SeedData {
             elevationProfile = listOf(
                 ElevationPoint(0.0, 1200), ElevationPoint(4.0, 1550), ElevationPoint(8.0, 1900),
                 ElevationPoint(12.0, 2100), ElevationPoint(16.0, 2300)
-            )
+            ),
+            schedule = "Open: Mon-Fri (6 AM - 2 PM) | Closed: Sat, Sun (Forest permit needed)"
         ),
         Trail(
             id = "trail_7",
@@ -180,7 +186,42 @@ object SeedData {
             elevationProfile = listOf(
                 ElevationPoint(0.0, 380), ElevationPoint(1.25, 450), ElevationPoint(2.5, 530),
                 ElevationPoint(3.75, 600), ElevationPoint(5.0, 680)
-            )
+            ),
+            schedule = "Open: All days (5 AM - 8 PM) | Temple darshan: 6 AM - 12 PM, 4 PM - 8 PM"
+        ),
+        Trail(
+            id = "trail_9",
+            name = "PSG iTech Neelambur Campus Trek",
+            description = "A fun campus trek around PSG Institute of Technology and Applied Research, Neelambur. Walk from the main gate past the admin block, through the central courtyard, along the lab buildings, loop around the ground, and back via the canteen. Perfect break between OOSE lab sessions!",
+            difficulty = Difficulty.Easy,
+            distance = 1.5,
+            estimatedDuration = "30-45 mins",
+            elevationGain = 15,
+            rating = 4.9,
+            coordinates = listOf(
+                LatLng(11.06580, 77.09380), // Main gate entrance
+                LatLng(11.06560, 77.09350), // Admin block
+                LatLng(11.06520, 77.09310), // Central courtyard
+                LatLng(11.06480, 77.09280), // Lab block
+                LatLng(11.06450, 77.09250), // Towards ground
+                LatLng(11.06420, 77.09290), // Ground side
+                LatLng(11.06440, 77.09340), // Back road
+                LatLng(11.06470, 77.09370), // Near canteen
+                LatLng(11.06510, 77.09390), // Canteen area
+                LatLng(11.06550, 77.09400), // Return path
+                LatLng(11.06580, 77.09380)  // Back to gate
+            ),
+            startPoint = LatLng(11.06580, 77.09380),
+            endPoint = LatLng(11.06580, 77.09380),
+            hazards = listOf("Faculty supervision required", "Attendance shortage risk", "Canteen temptation", "HOD sighting zone"),
+            region = "Coimbatore",
+            popularity = 100,
+            coverageStatus = CoverageStatus.Full,
+            elevationProfile = listOf(
+                ElevationPoint(0.0, 390), ElevationPoint(0.3, 392), ElevationPoint(0.6, 395),
+                ElevationPoint(0.9, 393), ElevationPoint(1.2, 391), ElevationPoint(1.5, 390)
+            ),
+            schedule = "Open: Mon-Fri (8:30 AM - 4:30 PM) | Closed: Sat, Sun, College holidays | Warning: HOD patrol hours 9-10 AM"
         ),
         Trail(
             id = "trail_8",
@@ -204,7 +245,8 @@ object SeedData {
             elevationProfile = listOf(
                 ElevationPoint(0.0, 350), ElevationPoint(2.0, 480), ElevationPoint(4.0, 620),
                 ElevationPoint(6.0, 750), ElevationPoint(8.0, 870), ElevationPoint(12.0, 1000)
-            )
+            ),
+            schedule = "Open: All days (6 AM - 5 PM) | Closed: Monsoon season (Jun-Aug)"
         )
     )
 
@@ -238,6 +280,62 @@ object SeedData {
             centerLat = 10.9870, centerLng = 76.7690, radius = 350.0,
             type = "Landslide", severity = "High",
             description = "Loose soil section prone to landslides after heavy rain.", verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_7", name = "Canteen - Food Trap",
+            centerLat = 11.06510, centerLng = 77.09390, radius = 25.0,
+            type = "Terrain", severity = "Critical",
+            description = "High food temptation zone. Biriyani aroma radius: 50m. Budget may not survive. Students often get stuck here for hours.",
+            verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_8", name = "HOD Office - No Entry Zone",
+            centerLat = 11.06560, centerLng = 77.09350, radius = 15.0,
+            type = "Restricted", severity = "Critical",
+            description = "Attendance verification zone. Avoid if bunking. High risk of getting caught. Survival rate: 20%.",
+            verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_9", name = "Library - Sleep Trap",
+            centerLat = 11.06530, centerLng = 77.09280, radius = 20.0,
+            type = "Wildlife", severity = "High",
+            description = "AC + silence = guaranteed nap. Many students entered, few returned awake. Bring coffee or perish.",
+            verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_10", name = "CS Lab - Code Zone",
+            centerLat = 11.06480, centerLng = 77.09280, radius = 18.0,
+            type = "Terrain", severity = "High",
+            description = "OOSE Lab. Deadlines strike without warning. Segfaults and NullPointers lurk everywhere. Code or perish.",
+            verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_11", name = "Parking Lot - Bike Jungle",
+            centerLat = 11.06600, centerLng = 77.09420, radius = 30.0,
+            type = "Terrain", severity = "Medium",
+            description = "Peak hour chaos. Finding your bike is the real trek. Last seen: your Activa between 500 other Activas.",
+            verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_12", name = "Main Gate - Checkpoint",
+            centerLat = 11.06580, centerLng = 77.09380, radius = 15.0,
+            type = "Restricted", severity = "Critical",
+            description = "ID card checkpoint. No ID = no entry. Late entry logged. Security uncle remembers every face.",
+            verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_13", name = "Seminar Hall - Boredom Zone",
+            centerLat = 11.06450, centerLng = 77.09320, radius = 20.0,
+            type = "Terrain", severity = "High",
+            description = "3-hour seminars with no breaks. Phone confiscation risk. Back-benchers have higher survival rate.",
+            verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_14", name = "Exam Hall - Final Boss",
+            centerLat = 11.06470, centerLng = 77.09250, radius = 22.0,
+            type = "Terrain", severity = "Critical",
+            description = "The ultimate danger zone. No phones, no notes, no mercy. Only your brain vs the question paper. Good luck.",
+            verified = true
         ),
         DangerZoneEntity(
             id = "dz_6", name = "Mettupalayam - Railway Danger",

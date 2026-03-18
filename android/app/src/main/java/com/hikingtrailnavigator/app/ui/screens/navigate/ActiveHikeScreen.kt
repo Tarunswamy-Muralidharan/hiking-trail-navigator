@@ -1,6 +1,7 @@
 package com.hikingtrailnavigator.app.ui.screens.navigate
 
 import android.graphics.Color as AndroidColor
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,32 +29,61 @@ fun ActiveHikeScreen(
     val trail = uiState.trail
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // OpenStreetMap
+        // OpenStreetMap with satellite support
         OsmMapView(
             modifier = Modifier.fillMaxSize(),
-            centerLat = uiState.currentLocation?.latitude ?: trail?.startPoint?.latitude ?: 13.0,
-            centerLng = uiState.currentLocation?.longitude ?: trail?.startPoint?.longitude ?: 75.5,
-            zoomLevel = 14.0,
+            centerLat = uiState.currentLocation?.latitude ?: trail?.startPoint?.latitude ?: 11.065,
+            centerLng = uiState.currentLocation?.longitude ?: trail?.startPoint?.longitude ?: 77.093,
+            zoomLevel = 18.0,
+            useSatellite = uiState.useSatellite,
+            showMyLocation = true,
             markers = buildList {
-                uiState.currentLocation?.let {
-                    add(MapMarker(position = it, title = "You"))
+                // Trail start/end markers
+                trail?.let {
+                    add(MapMarker(position = it.startPoint, title = "Start", snippet = "Trail start point"))
+                    if (it.startPoint != it.endPoint) {
+                        add(MapMarker(position = it.endPoint, title = "End", snippet = "Trail end point"))
+                    }
+                }
+                // Danger zone center markers
+                uiState.allDangerZones.forEach { zone ->
+                    add(MapMarker(
+                        position = zone.center,
+                        title = zone.name,
+                        snippet = "${zone.severity} - ${zone.description}",
+                        color = AndroidColor.rgb(211, 47, 47)
+                    ))
                 }
             },
             polylines = buildList {
+                // Safe route in GREEN (trail path)
                 trail?.coordinates?.let { coords ->
-                    add(MapPolyline(points = coords, color = AndroidColor.argb(128, 46, 125, 50), width = 4f))
+                    if (coords.isNotEmpty()) {
+                        add(MapPolyline(
+                            points = coords,
+                            color = AndroidColor.rgb(46, 125, 50),
+                            width = 8f
+                        ))
+                    }
                 }
+                // User's actual walked path in ORANGE
                 if (uiState.route.isNotEmpty()) {
-                    add(MapPolyline(points = uiState.route, color = AndroidColor.rgb(255, 111, 0), width = 6f))
+                    add(MapPolyline(
+                        points = uiState.route,
+                        color = AndroidColor.rgb(255, 111, 0),
+                        width = 5f
+                    ))
                 }
             },
             circles = buildList {
-                // Show nearby danger zones on active hike map
-                uiState.insideDangerZone?.let { zone ->
+                // All danger zones as red circles
+                uiState.allDangerZones.forEach { zone ->
                     add(MapCircle(
-                        center = zone.center, radiusMeters = zone.radius,
-                        fillColor = AndroidColor.argb(50, 211, 47, 47),
-                        strokeColor = AndroidColor.rgb(211, 47, 47)
+                        center = zone.center,
+                        radiusMeters = zone.radius,
+                        fillColor = AndroidColor.argb(60, 211, 47, 47),
+                        strokeColor = AndroidColor.rgb(211, 47, 47),
+                        strokeWidth = 2.5f
                     ))
                 }
             }
@@ -133,6 +163,64 @@ fun ActiveHikeScreen(
                     Icon(Icons.Default.SignalCellularOff, null, tint = Warning, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
                     Text("No network coverage", fontSize = 13.sp, color = Warning)
+                }
+            }
+        }
+
+        // Map controls (satellite toggle)
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SmallFloatingActionButton(
+                onClick = { viewModel.toggleSatellite() },
+                containerColor = Color.White,
+                contentColor = Color(0xFF424242)
+            ) {
+                Icon(
+                    if (uiState.useSatellite) Icons.Default.Map else Icons.Default.Satellite,
+                    contentDescription = "Toggle map type"
+                )
+            }
+        }
+
+        // Legend card
+        Card(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 8.dp),
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
+        ) {
+            Column(modifier = Modifier.padding(8.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(12.dp, 4.dp).padding(0.dp)) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            drawRect(color = Color(0xFF2E7D32))
+                        }
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text("Safe route", fontSize = 9.sp, color = Color(0xFF424242))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(12.dp, 4.dp).padding(0.dp)) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            drawRect(color = Color(0xFFFF6F00))
+                        }
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text("Your path", fontSize = 9.sp, color = Color(0xFF424242))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(modifier = Modifier.size(8.dp).padding(0.dp)) {
+                        Canvas(modifier = Modifier.fillMaxSize()) {
+                            drawCircle(color = Color(0xFFD32F2F))
+                        }
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text("Danger zone", fontSize = 9.sp, color = Color(0xFF424242))
                 }
             }
         }

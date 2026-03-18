@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -13,11 +14,15 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.hikingtrailnavigator.app.service.SessionManager
 import com.hikingtrailnavigator.app.ui.navigation.BottomNavItem
 import com.hikingtrailnavigator.app.ui.navigation.Screen
+import com.hikingtrailnavigator.app.ui.screens.admin.AdminAddTrailScreen
 import com.hikingtrailnavigator.app.ui.screens.admin.AdminDashboardScreen
 import com.hikingtrailnavigator.app.ui.screens.admin.AdminLoginScreen
+import com.hikingtrailnavigator.app.ui.screens.admin.AdminManageTrailsScreen
 import com.hikingtrailnavigator.app.ui.screens.home.HomeScreen
+import com.hikingtrailnavigator.app.ui.screens.login.LoginScreen
 import com.hikingtrailnavigator.app.ui.screens.navigate.ActiveHikeScreen
 import com.hikingtrailnavigator.app.ui.screens.navigate.ActivityHistoryScreen
 import com.hikingtrailnavigator.app.ui.screens.navigate.NavigateScreen
@@ -34,8 +39,10 @@ fun HikerApp() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
+    val context = LocalContext.current
+    val sessionManager = SessionManager(context)
 
-    // Hide bottom bar on detail/sub screens
+    // Hide bottom bar on login and detail/sub screens
     val showBottomBar = currentDestination?.route in BottomNavItem.entries.map { it.route }
 
     Scaffold(
@@ -71,9 +78,25 @@ fun HikerApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Screen.Home.route,
+            startDestination = Screen.Login.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+            // Login screen
+            composable(Screen.Login.route) {
+                LoginScreen(
+                    onHikerLogin = { name ->
+                        sessionManager.saveHikerName(name)
+                        sessionManager.saveRole("hiker")
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Login.route) { inclusive = true }
+                        }
+                    },
+                    onAdminLogin = {
+                        navController.navigate(Screen.AdminLogin.route)
+                    }
+                )
+            }
+
             composable(Screen.Home.route) {
                 HomeScreen(
                     onTrailClick = { trailId ->
@@ -123,7 +146,6 @@ fun HikerApp() {
                 ActiveHikeScreen(
                     onBack = { navController.popBackStack() },
                     onHikeComplete = {
-                        // Try Navigate first, fall back to Home if not in back stack
                         val popped = navController.popBackStack(Screen.Navigate.route, false)
                         if (!popped) {
                             navController.popBackStack(Screen.Home.route, false)
@@ -170,7 +192,13 @@ fun HikerApp() {
                     onSettingsClick = { navController.navigate(Screen.Settings.route) },
                     onEmergencyContactsClick = { navController.navigate(Screen.EmergencyContacts.route) },
                     onAdminClick = { navController.navigate(Screen.AdminLogin.route) },
-                    onRouteWarningsClick = { navController.navigate(Screen.RouteWarnings.route) }
+                    onRouteWarningsClick = { navController.navigate(Screen.RouteWarnings.route) },
+                    onLogout = {
+                        sessionManager.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
                 )
             }
 
@@ -183,6 +211,7 @@ fun HikerApp() {
                 AdminLoginScreen(
                     onBack = { navController.popBackStack() },
                     onLoginSuccess = {
+                        sessionManager.saveRole("admin")
                         navController.navigate(Screen.AdminDashboard.route) {
                             popUpTo(Screen.AdminLogin.route) { inclusive = true }
                         }
@@ -191,7 +220,27 @@ fun HikerApp() {
             }
 
             composable(Screen.AdminDashboard.route) {
-                AdminDashboardScreen(onBack = { navController.popBackStack() })
+                AdminDashboardScreen(
+                    onBack = {
+                        sessionManager.logout()
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    onManageTrails = { navController.navigate(Screen.AdminManageTrails.route) }
+                )
+            }
+
+            composable(Screen.AdminManageTrails.route) {
+                AdminManageTrailsScreen(
+                    onBack = { navController.popBackStack() },
+                    onAddTrail = { navController.navigate(Screen.AdminAddTrail.route) }
+                )
+            }
+
+            composable(Screen.AdminAddTrail.route) {
+                AdminAddTrailScreen(onBack = { navController.popBackStack() })
             }
         }
     }

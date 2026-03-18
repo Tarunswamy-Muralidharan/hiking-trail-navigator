@@ -191,6 +191,42 @@ fun TrailDetailScreen(
                 }
             }
 
+            // Schedule
+            SectionTitle("Schedule")
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (trail.schedule.contains("Closed"))
+                        Color(0xFFFFF3E0) else Color(0xFFE8F5E9)
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Schedule, null,
+                        tint = if (trail.schedule.contains("Closed"))
+                            Color(0xFFE65100) else Color(0xFF2E7D32),
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        trail.schedule.split("|").forEach { part ->
+                            Text(
+                                part.trim(),
+                                fontSize = 14.sp,
+                                color = Color(0xFF424242),
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+
             // Coverage status
             SectionTitle("Network Coverage")
             Row(

@@ -76,6 +76,30 @@ class EntityConversionTest {
         assertEquals("Full", entity.coverageStatus) // Stored as string
     }
 
+    @Test
+    fun `trail conversion should preserve schedule and checkInInterval`() {
+        val original = Trail(
+            id = "t-sched", name = "Scheduled Trail", description = "Has custom schedule",
+            difficulty = Difficulty.Moderate, distance = 8.0,
+            estimatedDuration = "3-4 hours", elevationGain = 400, rating = 4.2,
+            coordinates = listOf(LatLng(11.0, 76.9)),
+            startPoint = LatLng(11.0, 76.9), endPoint = LatLng(11.05, 76.95),
+            hazards = listOf("Rocks"), region = "Coimbatore", popularity = 60,
+            coverageStatus = CoverageStatus.Partial,
+            elevationProfile = listOf(ElevationPoint(0.0, 200)),
+            schedule = "Weekdays 6AM-2PM",
+            checkInIntervalMinutes = 15
+        )
+
+        val entity = original.toEntity()
+        val restored = entity.toDomain()
+
+        assertEquals("Weekdays 6AM-2PM", restored.schedule)
+        assertEquals(15, restored.checkInIntervalMinutes)
+        assertEquals(original.schedule, entity.schedule)
+        assertEquals(original.checkInIntervalMinutes, entity.checkInIntervalMinutes)
+    }
+
     // ==================== DangerZone Conversion Tests ====================
 
     @Test

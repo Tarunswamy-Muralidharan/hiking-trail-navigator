@@ -1,5 +1,7 @@
 package com.hikingtrailnavigator.app.ui.components
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color as AndroidColor
 import android.graphics.Paint
 import androidx.compose.runtime.*
@@ -7,11 +9,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import com.hikingtrailnavigator.app.domain.model.LatLng
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.util.MapTileIndex
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
 import org.osmdroid.views.overlay.Polyline
+import org.osmdroid.views.overlay.mylocation.GpsMyLocationProvider
+import org.osmdroid.views.overlay.mylocation.MyLocationNewOverlay
 
 data class MapMarker(
     val position: LatLng,
@@ -34,29 +40,102 @@ data class MapCircle(
     val strokeWidth: Float = 2f
 )
 
+// ESRI World Imagery satellite tile source (free, covers India)
+private val ESRI_SATELLITE = object : XYTileSource(
+    "ESRI World Imagery",
+    0, 19, 256, ".jpg",
+    arrayOf("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/")
+) {
+    override fun getTileURLString(pMapTileIndex: Long): String {
+        val zoom = MapTileIndex.getZoom(pMapTileIndex)
+        val x = MapTileIndex.getX(pMapTileIndex)
+        val y = MapTileIndex.getY(pMapTileIndex)
+        return "${baseUrl}$zoom/$y/$x"
+    }
+}
+
 @Composable
 fun OsmMapView(
     modifier: Modifier = Modifier,
     centerLat: Double = 13.0,
     centerLng: Double = 75.5,
     zoomLevel: Double = 10.0,
+    cameraMoveKey: Int = 0,
+    useSatellite: Boolean = false,
+    showMyLocation: Boolean = false,
     markers: List<MapMarker> = emptyList(),
     polylines: List<MapPolyline> = emptyList(),
     circles: List<MapCircle> = emptyList(),
     onMapClick: ((LatLng) -> Unit)? = null
 ) {
+    var myLocationOverlay by remember { mutableStateOf<MyLocationNewOverlay?>(null) }
+    var lastCameraMoveKey by remember { mutableIntStateOf(cameraMoveKey) }
+    var lastSatelliteState by remember { mutableStateOf(useSatellite) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            myLocationOverlay?.disableMyLocation()
+            myLocationOverlay?.disableFollowLocation()
+        }
+    }
+
     AndroidView(
         modifier = modifier,
         factory = { ctx ->
             MapView(ctx).apply {
-                setTileSource(TileSourceFactory.MAPNIK)
+                setTileSource(if (useSatellite) ESRI_SATELLITE else TileSourceFactory.MAPNIK)
                 setMultiTouchControls(true)
                 controller.setZoom(zoomLevel)
                 controller.setCenter(GeoPoint(centerLat, centerLng))
 
-                // Enable offline tile caching
                 setUseDataConnection(true)
                 isTilesScaledToDpi = true
+
+                if (showMyLocation) {
+                    val mapViewRef = this
+                    val locationProvider = GpsMyLocationProvider(ctx).apply {
+                        locationUpdateMinTime = 3000
+                        locationUpdateMinDistance = 3f
+                    }
+                    val locOverlay = MyLocationNewOverlay(locationProvider, mapViewRef).apply {
+                        enableMyLocation()
+                        enableFollowLocation()
+
+                        // Custom blue dot
+                        val dotSize = 48
+                        val personBmp = Bitmap.createBitmap(dotSize, dotSize, Bitmap.Config.ARGB_8888)
+                        val canvas = Canvas(personBmp)
+                        val outerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = AndroidColor.argb(60, 25, 118, 210)
+                            style = Paint.Style.FILL
+                        }
+                        canvas.drawCircle(dotSize / 2f, dotSize / 2f, dotSize / 2f, outerPaint)
+                        val innerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = AndroidColor.rgb(25, 118, 210)
+                            style = Paint.Style.FILL
+                        }
+                        canvas.drawCircle(dotSize / 2f, dotSize / 2f, dotSize / 3.5f, innerPaint)
+                        val borderPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                            color = AndroidColor.WHITE
+                            style = Paint.Style.STROKE
+                            strokeWidth = 4f
+                        }
+                        canvas.drawCircle(dotSize / 2f, dotSize / 2f, dotSize / 3.5f, borderPaint)
+                        setPersonIcon(personBmp)
+                        setDirectionIcon(personBmp)
+
+                        runOnFirstFix {
+                            val loc = myLocation
+                            if (loc != null) {
+                                mapViewRef.post {
+                                    mapViewRef.controller.animateTo(loc, 18.0, 1000L)
+                                }
+                            }
+                        }
+                    }
+                    overlays.add(locOverlay)
+                    myLocationOverlay = locOverlay
+                }
 
                 if (onMapClick != null) {
                     val clickOverlay = object : org.osmdroid.views.overlay.Overlay() {
@@ -77,11 +156,20 @@ fun OsmMapView(
             }
         },
         update = { mapView ->
-            // Clear previous overlays but keep the click overlay if present
+            // Switch tile source if satellite toggle changed
+            if (useSatellite != lastSatelliteState) {
+                lastSatelliteState = useSatellite
+                mapView.setTileSource(if (useSatellite) ESRI_SATELLITE else TileSourceFactory.MAPNIK)
+            }
+
+            // Keep special overlays
+            val locOverlay = mapView.overlays.filterIsInstance<MyLocationNewOverlay>().firstOrNull()
             val clickOverlay = if (onMapClick != null) mapView.overlays.firstOrNull {
-                it !is Marker && it !is Polyline && it !is Polygon
+                it !is Marker && it !is Polyline && it !is Polygon && it !is MyLocationNewOverlay
             } else null
+
             mapView.overlays.clear()
+            locOverlay?.let { mapView.overlays.add(it) }
             clickOverlay?.let { mapView.overlays.add(it) }
 
             // Add polylines
@@ -95,7 +183,7 @@ fun OsmMapView(
                 mapView.overlays.add(polyline)
             }
 
-            // Add circles (danger zones, no-coverage zones)
+            // Add circles
             circles.forEach { circle ->
                 val polygon = Polygon().apply {
                     points = Polygon.pointsAsCircle(
@@ -110,7 +198,7 @@ fun OsmMapView(
             }
 
             // Add markers
-            markers.forEach { m ->
+            markers.filter { it.title != "You are here" }.forEach { m ->
                 val marker = Marker(mapView).apply {
                     position = GeoPoint(m.position.latitude, m.position.longitude)
                     title = m.title
@@ -120,9 +208,13 @@ fun OsmMapView(
                 mapView.overlays.add(marker)
             }
 
-            // Update camera
-            mapView.controller.setCenter(GeoPoint(centerLat, centerLng))
-            mapView.controller.setZoom(zoomLevel)
+            // ONLY move camera when explicitly requested via cameraMoveKey change
+            if (cameraMoveKey != lastCameraMoveKey) {
+                lastCameraMoveKey = cameraMoveKey
+                locOverlay?.disableFollowLocation()
+                mapView.controller.animateTo(GeoPoint(centerLat, centerLng), zoomLevel, 500L)
+            }
+
             mapView.invalidate()
         }
     )

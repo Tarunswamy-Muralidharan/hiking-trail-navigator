@@ -47,7 +47,7 @@ data class HomeUiState(
     val selectedPlace: SearchSuggestion? = null,
     val mapCenterLat: Double = 11.0168,
     val mapCenterLng: Double = 76.9558,
-    val mapZoom: Double = 10.0,
+    val mapZoom: Double = 16.0,
     val showDangerZones: Boolean = true,
     val showNoCoverageZones: Boolean = true,
     val showHazards: Boolean = true,
@@ -55,7 +55,9 @@ data class HomeUiState(
     val riskLevel: String = "low",
     val isOffline: Boolean = false,
     val noCoverageWarning: String? = null,
-    val currentLocation: LatLng? = null
+    val currentLocation: LatLng? = null,
+    val cameraMoveKey: Int = 0,
+    val useSatellite: Boolean = true
 )
 
 @HiltViewModel
@@ -73,10 +75,11 @@ class HomeViewModel @Inject constructor(
 
     // Known places around Coimbatore for search
     private val knownPlaces = listOf(
-        SearchSuggestion("PSG iTech", "Neelambur, Coimbatore", LatLng(11.0168, 76.9558), 15.0),
+        SearchSuggestion("PSG iTech", "Neelambur, Coimbatore", LatLng(11.0650, 77.0932), 18.0),
+        SearchSuggestion("PSG iTech Neelambur", "Campus, Coimbatore", LatLng(11.0650, 77.0932), 18.0),
         SearchSuggestion("PSG College of Technology", "Peelamedu, Coimbatore", LatLng(11.0243, 77.0028), 15.0),
         SearchSuggestion("Coimbatore City", "Tamil Nadu", LatLng(11.0168, 76.9558), 12.0),
-        SearchSuggestion("Neelambur", "Coimbatore", LatLng(11.0195, 76.9630), 14.0),
+        SearchSuggestion("Neelambur", "Coimbatore", LatLng(11.0650, 77.0932), 16.0),
         SearchSuggestion("Marudhamalai Temple", "Coimbatore", LatLng(11.0010, 76.9080), 14.0),
         SearchSuggestion("Mettupalayam", "Coimbatore District", LatLng(11.2990, 76.9370), 13.0),
         SearchSuggestion("Ooty / Nilgiris", "Tamil Nadu", LatLng(11.4100, 76.6950), 12.0),
@@ -124,6 +127,8 @@ class HomeViewModel @Inject constructor(
         startLocationMonitoring()
     }
 
+    private var hasInitialLocation = false
+
     @SuppressLint("MissingPermission")
     private fun startLocationMonitoring() {
         val fusedClient = LocationServices.getFusedLocationProviderClient(appContext)
@@ -131,16 +136,29 @@ class HomeViewModel @Inject constructor(
             while (true) {
                 try {
                     val location = fusedClient.getCurrentLocation(
-                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        Priority.PRIORITY_HIGH_ACCURACY,
                         CancellationTokenSource().token
                     ).await()
                     if (location != null) {
                         val currentLatLng = LatLng(location.latitude, location.longitude)
-                        _uiState.update { it.copy(currentLocation = currentLatLng) }
+                        // First location fix: center map on user
+                        if (!hasInitialLocation) {
+                            hasInitialLocation = true
+                            _uiState.update {
+                                it.copy(
+                                    currentLocation = currentLatLng,
+                                    mapCenterLat = currentLatLng.latitude,
+                                    mapCenterLng = currentLatLng.longitude,
+                                    mapZoom = 17.0
+                                )
+                            }
+                        } else {
+                            _uiState.update { it.copy(currentLocation = currentLatLng) }
+                        }
                         checkNoCoverageProximity(currentLatLng)
                     }
                 } catch (_: Exception) {}
-                delay(30_000)
+                delay(10_000)
             }
         }
     }
@@ -218,7 +236,8 @@ class HomeViewModel @Inject constructor(
                 showSuggestions = false,
                 mapCenterLat = suggestion.location.latitude,
                 mapCenterLng = suggestion.location.longitude,
-                mapZoom = suggestion.zoomLevel
+                mapZoom = suggestion.zoomLevel,
+                cameraMoveKey = it.cameraMoveKey + 1
             )
         }
     }
@@ -228,13 +247,15 @@ class HomeViewModel @Inject constructor(
     }
 
     fun clearSelection() {
+        val loc = _uiState.value.currentLocation
         _uiState.update {
             it.copy(
                 selectedPlace = null,
                 searchQuery = "",
-                mapCenterLat = 11.0168,
-                mapCenterLng = 76.9558,
-                mapZoom = 10.0
+                mapCenterLat = loc?.latitude ?: 11.0168,
+                mapCenterLng = loc?.longitude ?: 76.9558,
+                mapZoom = 17.0,
+                cameraMoveKey = it.cameraMoveKey + 1
             )
         }
     }
@@ -246,8 +267,23 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun centerOnMyLocation() {
+        val loc = _uiState.value.currentLocation ?: return
+        _uiState.update {
+            it.copy(
+                mapCenterLat = loc.latitude,
+                mapCenterLng = loc.longitude,
+                mapZoom = 17.0,
+                selectedPlace = null,
+                searchQuery = "",
+                cameraMoveKey = it.cameraMoveKey + 1
+            )
+        }
+    }
+
     fun toggleDangerZones() { _uiState.update { it.copy(showDangerZones = !it.showDangerZones) } }
     fun toggleNoCoverageZones() { _uiState.update { it.copy(showNoCoverageZones = !it.showNoCoverageZones) } }
     fun toggleHazards() { _uiState.update { it.copy(showHazards = !it.showHazards) } }
     fun toggleUnexplored() { _uiState.update { it.copy(showUnexplored = !it.showUnexplored) } }
+    fun toggleSatellite() { _uiState.update { it.copy(useSatellite = !it.useSatellite) } }
 }

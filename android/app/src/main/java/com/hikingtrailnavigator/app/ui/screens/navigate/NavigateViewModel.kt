@@ -82,7 +82,13 @@ data class ActiveHikeUiState(
     val showNoCoverageAlert: Boolean = false,
     // Check-in escalation
     val checkInMissed: Boolean = false,
-    val checkInEscalationLevel: Int = 0
+    val checkInEscalationLevel: Int = 0,
+    // All danger zones for map display
+    val allDangerZones: List<DangerZone> = emptyList(),
+    // Satellite toggle
+    val useSatellite: Boolean = true,
+    // Offline map status
+    val offlineMapStatus: String = ""
 )
 
 @HiltViewModel
@@ -92,7 +98,9 @@ class ActiveHikeViewModel @Inject constructor(
     private val activityRepository: ActivityRepository,
     private val geofencingService: GeofencingService,
     private val fallDetectionService: FallDetectionService,
-    private val emergencyService: EmergencyService
+    private val emergencyService: EmergencyService,
+    private val sosAlertDao: com.hikingtrailnavigator.app.data.local.dao.SosAlertDao,
+    private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager
 ) : ViewModel() {
 
     private val trailId: String = savedStateHandle["trailId"] ?: ""
@@ -112,12 +120,17 @@ class ActiveHikeViewModel @Inject constructor(
         viewModelScope.launch {
             val trail = trailRepository.getTrailById(trailId)
             _uiState.update { it.copy(trail = trail) }
+            // Use configurable check-in interval from trail
+            trail?.let {
+                checkInIntervalMs = it.checkInIntervalMinutes * 60 * 1000L
+            }
         }
 
         // Load danger zones and no-coverage zones for proactive alerts
         viewModelScope.launch {
             trailRepository.getDangerZones().collect { zones ->
                 dangerZones = zones
+                _uiState.update { it.copy(allDangerZones = zones) }
             }
         }
         viewModelScope.launch {
@@ -182,6 +195,16 @@ class ActiveHikeViewModel @Inject constructor(
                     // Auto-trigger SOS
                     val loc = _uiState.value.currentLocation ?: return@launch
                     emergencyService.sendSosToContacts(loc)
+                    val trail = _uiState.value.trail
+                    sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
+                        id = UUID.randomUUID().toString(),
+                        hikerName = sessionManager.getHikerName(),
+                        trailId = trail?.id ?: "", trailName = trail?.name ?: "",
+                        alertType = "CHECKIN_MISSED",
+                        latitude = loc.latitude, longitude = loc.longitude,
+                        timestamp = System.currentTimeMillis(),
+                        message = "Missed safety check-in - no response"
+                    ))
                 }
             }
         }
@@ -215,6 +238,16 @@ class ActiveHikeViewModel @Inject constructor(
             // No response - escalate to SOS
             val loc = _uiState.value.currentLocation ?: return@launch
             emergencyService.sendSosToContacts(loc)
+            val trail = _uiState.value.trail
+            sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
+                id = UUID.randomUUID().toString(),
+                hikerName = sessionManager.getHikerName(),
+                trailId = trail?.id ?: "", trailName = trail?.name ?: "",
+                alertType = "FALL_DETECTED",
+                latitude = loc.latitude, longitude = loc.longitude,
+                timestamp = System.currentTimeMillis(),
+                message = "Fall detected - no response after 30s"
+            ))
             _uiState.update { it.copy(showFallDetectedDialog = false) }
         }
     }
@@ -319,6 +352,10 @@ class ActiveHikeViewModel @Inject constructor(
 
     fun dismissNoCoverageAlert() {
         _uiState.update { it.copy(showNoCoverageAlert = false) }
+    }
+
+    fun toggleSatellite() {
+        _uiState.update { it.copy(useSatellite = !it.useSatellite) }
     }
 
     fun togglePause() {

@@ -93,7 +93,9 @@ class SOSViewModel @Inject constructor(
     private val emergencyService: EmergencyService,
     private val contactRepository: EmergencyContactRepository,
     private val connectivityService: ConnectivityService,
-    private val api: HikerApi
+    private val api: HikerApi,
+    private val sosAlertDao: com.hikingtrailnavigator.app.data.local.dao.SosAlertDao,
+    private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SosUiState())
@@ -140,6 +142,17 @@ class SOSViewModel @Inject constructor(
             emergencyService.sendSosToAllContacts(actualLoc)
             val count = contactRepository.getContactCount() + 2 // +2 for forest dept contacts
             _uiState.update { it.copy(contactsNotified = count) }
+
+            // Insert SOS alert for admin dashboard
+            sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
+                id = UUID.randomUUID().toString(),
+                hikerName = sessionManager.getHikerName(),
+                trailId = "", trailName = "Unknown",
+                alertType = "SOS_BUTTON",
+                latitude = actualLoc.latitude, longitude = actualLoc.longitude,
+                timestamp = System.currentTimeMillis(),
+                message = "Hiker pressed SOS button"
+            ))
 
             // 2. Try API call if online (non-blocking)
             try {

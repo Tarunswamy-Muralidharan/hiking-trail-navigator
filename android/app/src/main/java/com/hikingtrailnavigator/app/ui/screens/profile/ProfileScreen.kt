@@ -28,6 +28,7 @@ fun ProfileScreen(
     onEmergencyContactsClick: () -> Unit,
     onAdminClick: () -> Unit = {},
     onRouteWarningsClick: () -> Unit = {},
+    onLogout: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -185,6 +186,21 @@ fun ProfileScreen(
                     title = "About",
                     onClick = { }
                 )
+            }
+
+            // Logout
+            item {
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = onLogout,
+                    modifier = Modifier.fillMaxWidth().height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Danger)
+                ) {
+                    Icon(Icons.Default.Logout, null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text("Logout", fontWeight = FontWeight.SemiBold)
+                }
             }
 
             // App info

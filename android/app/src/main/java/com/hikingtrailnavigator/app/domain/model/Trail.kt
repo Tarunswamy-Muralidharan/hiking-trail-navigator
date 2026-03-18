@@ -16,7 +16,9 @@ data class Trail(
     val region: String,
     val popularity: Int,
     val coverageStatus: CoverageStatus,
-    val elevationProfile: List<ElevationPoint>
+    val elevationProfile: List<ElevationPoint>,
+    val schedule: String = "Open all days",
+    val checkInIntervalMinutes: Int = 30
 )
 
 data class LatLng(val latitude: Double, val longitude: Double)

@@ -139,6 +139,44 @@ class TrailModelTest {
         assertEquals("18004251600", contact.phone)
     }
 
+    // ==================== Trail Schedule & Check-In Tests (Session 10) ====================
+
+    @Test
+    fun `trail should have default schedule and check-in interval`() {
+        val trail = Trail(
+            id = "t1", name = "Test Trail", description = "Test",
+            difficulty = Difficulty.Easy, distance = 5.0,
+            estimatedDuration = "2h", elevationGain = 200, rating = 4.0,
+            coordinates = listOf(LatLng(11.0, 76.9)),
+            startPoint = LatLng(11.0, 76.9), endPoint = LatLng(11.1, 77.0),
+            hazards = emptyList(), region = "Test", popularity = 50,
+            coverageStatus = CoverageStatus.Full,
+            elevationProfile = listOf(ElevationPoint(0.0, 100))
+        )
+
+        assertEquals("Open all days", trail.schedule)
+        assertEquals(30, trail.checkInIntervalMinutes) // 30 min default
+    }
+
+    @Test
+    fun `trail should accept custom schedule and check-in interval`() {
+        val trail = Trail(
+            id = "t1", name = "Restricted Trail", description = "Limited access",
+            difficulty = Difficulty.Hard, distance = 15.0,
+            estimatedDuration = "6h", elevationGain = 800, rating = 4.2,
+            coordinates = listOf(LatLng(11.0, 76.9)),
+            startPoint = LatLng(11.0, 76.9), endPoint = LatLng(11.1, 77.0),
+            hazards = listOf("Wildlife"), region = "Coimbatore", popularity = 70,
+            coverageStatus = CoverageStatus.Partial,
+            elevationProfile = listOf(ElevationPoint(0.0, 200)),
+            schedule = "Weekdays only 6AM-2PM",
+            checkInIntervalMinutes = 15
+        )
+
+        assertEquals("Weekdays only 6AM-2PM", trail.schedule)
+        assertEquals(15, trail.checkInIntervalMinutes)
+    }
+
     // ==================== WeatherData Tests ====================
 
     @Test

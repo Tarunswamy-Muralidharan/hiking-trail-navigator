@@ -39,6 +39,7 @@ object AppModule {
     @Provides fun provideEmergencyContactDao(db: HikerDatabase): EmergencyContactDao = db.emergencyContactDao()
     @Provides fun provideActiveHikerDao(db: HikerDatabase): ActiveHikerDao = db.activeHikerDao()
     @Provides fun provideRouteWarningDao(db: HikerDatabase): RouteWarningDao = db.routeWarningDao()
+    @Provides fun provideSosAlertDao(db: HikerDatabase): SosAlertDao = db.sosAlertDao()
 
     @Provides
     @Singleton
