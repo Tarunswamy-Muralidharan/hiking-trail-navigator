@@ -22,9 +22,25 @@ object SeedData {
             elevationGain = 1500,
             rating = 4.7,
             coordinates = listOf(
-                LatLng(11.0100, 76.7950), LatLng(11.0050, 76.7880), LatLng(10.9990, 76.7810),
-                LatLng(10.9930, 76.7750), LatLng(10.9870, 76.7690), LatLng(10.9810, 76.7630),
-                LatLng(10.9750, 76.7570), LatLng(10.9690, 76.7510)
+                LatLng(11.0100, 76.7950), // Poondi base (start)
+                LatLng(11.0078, 76.7928), // Trail entrance past temple
+                LatLng(11.0055, 76.7903), // Forest path - 1st hill approach
+                LatLng(11.0038, 76.7870), // 1st hill - Vellai Vinayakar temple
+                LatLng(11.0015, 76.7845), // Ridge path between 1st and 2nd hill
+                LatLng(10.9990, 76.7822), // 2nd hill summit
+                LatLng(10.9968, 76.7795), // Descent to valley
+                LatLng(10.9950, 76.7760), // Valley stream crossing
+                LatLng(10.9935, 76.7738), // 3rd hill - Vazhukku Paarai (slippery rock)
+                LatLng(10.9912, 76.7710), // Ridge trail through dense forest
+                LatLng(10.9890, 76.7685), // 4th hill - Kai Thatti Sonai
+                LatLng(10.9865, 76.7668), // Trail curves west through shola forest
+                LatLng(10.9840, 76.7640), // 5th hill approach - steep section
+                LatLng(10.9815, 76.7615), // 5th hill - Aandi Sonai spring
+                LatLng(10.9790, 76.7590), // Grassland traverse to 6th hill
+                LatLng(10.9762, 76.7568), // 6th hill - panoramic viewpoint
+                LatLng(10.9738, 76.7545), // Final steep ascent begins
+                LatLng(10.9715, 76.7525), // Rocky scramble section
+                LatLng(10.9690, 76.7510)  // 7th hill - Vellingiri Andavar temple (summit)
             ),
             startPoint = LatLng(11.0100, 76.7950),
             endPoint = LatLng(10.9690, 76.7510),
@@ -49,8 +65,18 @@ object SeedData {
             elevationGain = 450,
             rating = 4.5,
             coordinates = listOf(
-                LatLng(10.9450, 76.6350), LatLng(10.9410, 76.6290), LatLng(10.9370, 76.6230),
-                LatLng(10.9330, 76.6170), LatLng(10.9290, 76.6110)
+                LatLng(10.9450, 76.6350), // Siruvani foothills trailhead
+                LatLng(10.9438, 76.6332), // Forest entry checkpoint
+                LatLng(10.9425, 76.6310), // Winding forest path
+                LatLng(10.9415, 76.6285), // First river crossing
+                LatLng(10.9398, 76.6268), // Trail follows river upstream
+                LatLng(10.9380, 76.6248), // Dense bamboo grove section
+                LatLng(10.9365, 76.6225), // Second river crossing
+                LatLng(10.9350, 76.6200), // Uphill through teak plantation
+                LatLng(10.9332, 76.6175), // Ridge with valley views
+                LatLng(10.9318, 76.6148), // Descent to dam approach
+                LatLng(10.9305, 76.6128), // Dam viewpoint trail
+                LatLng(10.9290, 76.6110)  // Siruvani Dam
             ),
             startPoint = LatLng(10.9450, 76.6350),
             endPoint = LatLng(10.9290, 76.6110),
@@ -74,8 +100,18 @@ object SeedData {
             elevationGain = 700,
             rating = 4.6,
             coordinates = listOf(
-                LatLng(10.4840, 76.8380), LatLng(10.4800, 76.8330), LatLng(10.4750, 76.8270),
-                LatLng(10.4700, 76.8210), LatLng(10.4650, 76.8150)
+                LatLng(10.4840, 76.8380), // Topslip forest gate
+                LatLng(10.4828, 76.8365), // Teak plantation entrance
+                LatLng(10.4812, 76.8348), // Trail follows forest road
+                LatLng(10.4795, 76.8330), // Elephant observation tower
+                LatLng(10.4778, 76.8308), // Stream crossing - gaur territory
+                LatLng(10.4760, 76.8285), // Dense evergreen forest path
+                LatLng(10.4745, 76.8265), // Ridge climb begins
+                LatLng(10.4728, 76.8242), // Hornbill nesting area
+                LatLng(10.4710, 76.8222), // Switchback trail section
+                LatLng(10.4695, 76.8198), // Valley overlook viewpoint
+                LatLng(10.4678, 76.8175), // Final descent to Parambikulam
+                LatLng(10.4650, 76.8150)  // Parambikulam dam area
             ),
             startPoint = LatLng(10.4840, 76.8380),
             endPoint = LatLng(10.4650, 76.8150),
@@ -99,8 +135,18 @@ object SeedData {
             elevationGain = 500,
             rating = 4.3,
             coordinates = listOf(
-                LatLng(11.2540, 78.3580), LatLng(11.2510, 78.3550), LatLng(11.2480, 78.3520),
-                LatLng(11.2450, 78.3490), LatLng(11.2420, 78.3460)
+                LatLng(11.2540, 78.3580), // Kolli Hills viewpoint (top)
+                LatLng(11.2532, 78.3572), // Start of 1000-step descent
+                LatLng(11.2522, 78.3565), // First set of stone steps
+                LatLng(11.2515, 78.3555), // Trail curves through forest canopy
+                LatLng(11.2505, 78.3548), // Medicinal plant forest section
+                LatLng(11.2495, 78.3538), // Rocky switchback section
+                LatLng(11.2485, 78.3525), // Steep descent - rope section
+                LatLng(11.2475, 78.3512), // Stream crossing near falls
+                LatLng(11.2465, 78.3498), // Mist zone - falls spray
+                LatLng(11.2450, 78.3480), // Agaya Gangai Falls viewpoint
+                LatLng(11.2440, 78.3470), // Falls base pool area
+                LatLng(11.2420, 78.3460)  // Falls rest area
             ),
             startPoint = LatLng(11.2540, 78.3580),
             endPoint = LatLng(11.2420, 78.3460),
@@ -124,8 +170,16 @@ object SeedData {
             elevationGain = 200,
             rating = 4.2,
             coordinates = listOf(
-                LatLng(11.4010, 76.7350), LatLng(11.4025, 76.7370), LatLng(11.4040, 76.7390),
-                LatLng(11.4055, 76.7410)
+                LatLng(11.4010, 76.7350), // Doddabetta parking area
+                LatLng(11.4015, 76.7355), // Paved walkway starts
+                LatLng(11.4020, 76.7362), // Gentle incline through eucalyptus
+                LatLng(11.4025, 76.7368), // First viewpoint - valley view
+                LatLng(11.4030, 76.7375), // Switchback on paved path
+                LatLng(11.4035, 76.7382), // Shola forest section
+                LatLng(11.4040, 76.7390), // Steep section with railing
+                LatLng(11.4045, 76.7396), // Near summit - fog zone
+                LatLng(11.4050, 76.7403), // Final stairs to telescope house
+                LatLng(11.4055, 76.7410)  // Doddabetta Peak summit (2637m)
             ),
             startPoint = LatLng(11.4010, 76.7350),
             endPoint = LatLng(11.4055, 76.7410),
@@ -149,8 +203,21 @@ object SeedData {
             elevationGain = 1100,
             rating = 4.8,
             coordinates = listOf(
-                LatLng(10.3500, 76.8800), LatLng(10.3450, 76.8750), LatLng(10.3400, 76.8690),
-                LatLng(10.3350, 76.8630), LatLng(10.3300, 76.8570), LatLng(10.3250, 76.8510)
+                LatLng(10.3500, 76.8800), // Grass Hills base camp
+                LatLng(10.3488, 76.8785), // Forest road entrance
+                LatLng(10.3475, 76.8768), // Trail through cardamom plantation
+                LatLng(10.3460, 76.8750), // Stream ford - elephant territory
+                LatLng(10.3445, 76.8730), // Steep climb through shola forest
+                LatLng(10.3430, 76.8710), // Emerging onto grassland plateau
+                LatLng(10.3412, 76.8690), // Open grassland - Nilgiri Tahr zone
+                LatLng(10.3395, 76.8668), // Ridgeline traverse
+                LatLng(10.3378, 76.8645), // Wind-exposed saddle
+                LatLng(10.3360, 76.8622), // Panoramic viewpoint west
+                LatLng(10.3340, 76.8598), // Rocky ascent to summit ridge
+                LatLng(10.3320, 76.8575), // Summit approach - cliff edges
+                LatLng(10.3300, 76.8552), // False summit
+                LatLng(10.3280, 76.8530), // Final ridge walk
+                LatLng(10.3250, 76.8510)  // Grass Hills summit viewpoint
             ),
             startPoint = LatLng(10.3500, 76.8800),
             endPoint = LatLng(10.3250, 76.8510),
@@ -174,8 +241,17 @@ object SeedData {
             elevationGain = 300,
             rating = 4.1,
             coordinates = listOf(
-                LatLng(10.9950, 76.9200), LatLng(10.9965, 76.9170), LatLng(10.9980, 76.9140),
-                LatLng(10.9995, 76.9110), LatLng(11.0010, 76.9080)
+                LatLng(10.9950, 76.9200), // Perur temple entrance
+                LatLng(10.9955, 76.9190), // Cross village road
+                LatLng(10.9960, 76.9178), // Begin rocky footpath
+                LatLng(10.9966, 76.9165), // Through dry scrubland
+                LatLng(10.9972, 76.9152), // First stone steps
+                LatLng(10.9978, 76.9140), // Shaded banyan tree rest stop
+                LatLng(10.9985, 76.9128), // Rocky ascent - marked trail
+                LatLng(10.9990, 76.9115), // Halfway viewpoint - city view
+                LatLng(10.9996, 76.9102), // Steep section with handrails
+                LatLng(11.0003, 76.9090), // Temple approach road
+                LatLng(11.0010, 76.9080)  // Marudhamalai hilltop temple
             ),
             startPoint = LatLng(10.9950, 76.9200),
             endPoint = LatLng(11.0010, 76.9080),
@@ -199,20 +275,33 @@ object SeedData {
             elevationGain = 15,
             rating = 4.9,
             coordinates = listOf(
-                LatLng(11.06580, 77.09380), // Main gate entrance
-                LatLng(11.06560, 77.09350), // Admin block
-                LatLng(11.06520, 77.09310), // Central courtyard
-                LatLng(11.06480, 77.09280), // Lab block
-                LatLng(11.06450, 77.09250), // Towards ground
-                LatLng(11.06420, 77.09290), // Ground side
-                LatLng(11.06440, 77.09340), // Back road
-                LatLng(11.06470, 77.09370), // Near canteen
-                LatLng(11.06510, 77.09390), // Canteen area
-                LatLng(11.06550, 77.09400), // Return path
-                LatLng(11.06580, 77.09380)  // Back to gate
+                LatLng(11.0632, 77.0938), // Main gate - Avinashi Road entrance
+                LatLng(11.0635, 77.0937), // Security checkpoint
+                LatLng(11.0638, 77.0936), // Main driveway heading north
+                LatLng(11.0641, 77.0935), // Admin block driveway junction
+                LatLng(11.0644, 77.0933), // Admin/office block front
+                LatLng(11.0647, 77.0931), // Central connector corridor
+                LatLng(11.0650, 77.0929), // S&H block junction
+                LatLng(11.0653, 77.0926), // CSE department block
+                LatLng(11.0656, 77.0924), // IT/ECE block area
+                LatLng(11.0659, 77.0923), // North campus road - turn east
+                LatLng(11.0661, 77.0926), // Along north boundary road
+                LatLng(11.0662, 77.0930), // Sports ground access
+                LatLng(11.0662, 77.0935), // Sports ground east side
+                LatLng(11.0661, 77.0940), // Turn south along east campus road
+                LatLng(11.0658, 77.0943), // Workshop/lab complex
+                LatLng(11.0655, 77.0945), // Library building
+                LatLng(11.0652, 77.0946), // Library garden area
+                LatLng(11.0649, 77.0945), // Canteen junction
+                LatLng(11.0646, 77.0943), // Canteen / food court
+                LatLng(11.0643, 77.0942), // South campus connector
+                LatLng(11.0640, 77.0941), // Parking lot east side
+                LatLng(11.0637, 77.0940), // Near bus bay
+                LatLng(11.0635, 77.0939), // Return toward main drive
+                LatLng(11.0632, 77.0938)  // Back to main gate
             ),
-            startPoint = LatLng(11.06580, 77.09380),
-            endPoint = LatLng(11.06580, 77.09380),
+            startPoint = LatLng(11.0632, 77.0938),
+            endPoint = LatLng(11.0632, 77.0938),
             hazards = listOf("Faculty supervision required", "Attendance shortage risk", "Canteen temptation", "HOD sighting zone"),
             region = "Coimbatore",
             popularity = 100,
@@ -233,8 +322,20 @@ object SeedData {
             elevationGain = 650,
             rating = 4.4,
             coordinates = listOf(
-                LatLng(11.2950, 76.9400), LatLng(11.2980, 76.9350), LatLng(11.3010, 76.9300),
-                LatLng(11.3040, 76.9250), LatLng(11.3070, 76.9200), LatLng(11.3100, 76.9150)
+                LatLng(11.2950, 76.9400), // Mettupalayam town edge
+                LatLng(11.2958, 76.9388), // Cross railway tracks
+                LatLng(11.2968, 76.9372), // Forest road entrance
+                LatLng(11.2978, 76.9358), // Along Nilgiri Mountain Railway
+                LatLng(11.2990, 76.9340), // First bridge crossing
+                LatLng(11.3002, 76.9322), // Trail diverges from railway
+                LatLng(11.3015, 76.9305), // Dense deciduous forest path
+                LatLng(11.3028, 76.9288), // Stream crossing - birdwatching spot
+                LatLng(11.3040, 76.9268), // Uphill through teak forest
+                LatLng(11.3052, 76.9248), // Old British-era milestone
+                LatLng(11.3065, 76.9228), // Steep climb with valley view
+                LatLng(11.3078, 76.9208), // Ridge path through mixed forest
+                LatLng(11.3090, 76.9180), // Near watchtower
+                LatLng(11.3100, 76.9150)  // Forest trail end - hilltop
             ),
             startPoint = LatLng(11.2950, 76.9400),
             endPoint = LatLng(11.3100, 76.9150),
@@ -283,56 +384,56 @@ object SeedData {
         ),
         DangerZoneEntity(
             id = "dz_7", name = "Canteen - Food Trap",
-            centerLat = 11.06510, centerLng = 77.09390, radius = 25.0,
+            centerLat = 11.0646, centerLng = 77.0943, radius = 25.0,
             type = "Terrain", severity = "Critical",
             description = "High food temptation zone. Biriyani aroma radius: 50m. Budget may not survive. Students often get stuck here for hours.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_8", name = "HOD Office - No Entry Zone",
-            centerLat = 11.06560, centerLng = 77.09350, radius = 15.0,
+            centerLat = 11.0644, centerLng = 77.0933, radius = 15.0,
             type = "Restricted", severity = "Critical",
             description = "Attendance verification zone. Avoid if bunking. High risk of getting caught. Survival rate: 20%.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_9", name = "Library - Sleep Trap",
-            centerLat = 11.06530, centerLng = 77.09280, radius = 20.0,
+            centerLat = 11.0655, centerLng = 77.0945, radius = 20.0,
             type = "Wildlife", severity = "High",
             description = "AC + silence = guaranteed nap. Many students entered, few returned awake. Bring coffee or perish.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_10", name = "CS Lab - Code Zone",
-            centerLat = 11.06480, centerLng = 77.09280, radius = 18.0,
+            centerLat = 11.0653, centerLng = 77.0926, radius = 18.0,
             type = "Terrain", severity = "High",
             description = "OOSE Lab. Deadlines strike without warning. Segfaults and NullPointers lurk everywhere. Code or perish.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_11", name = "Parking Lot - Bike Jungle",
-            centerLat = 11.06600, centerLng = 77.09420, radius = 30.0,
+            centerLat = 11.0637, centerLng = 77.0940, radius = 30.0,
             type = "Terrain", severity = "Medium",
             description = "Peak hour chaos. Finding your bike is the real trek. Last seen: your Activa between 500 other Activas.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_12", name = "Main Gate - Checkpoint",
-            centerLat = 11.06580, centerLng = 77.09380, radius = 15.0,
+            centerLat = 11.0632, centerLng = 77.0938, radius = 15.0,
             type = "Restricted", severity = "Critical",
             description = "ID card checkpoint. No ID = no entry. Late entry logged. Security uncle remembers every face.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_13", name = "Seminar Hall - Boredom Zone",
-            centerLat = 11.06450, centerLng = 77.09320, radius = 20.0,
+            centerLat = 11.0650, centerLng = 77.0929, radius = 20.0,
             type = "Terrain", severity = "High",
             description = "3-hour seminars with no breaks. Phone confiscation risk. Back-benchers have higher survival rate.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_14", name = "Exam Hall - Final Boss",
-            centerLat = 11.06470, centerLng = 77.09250, radius = 22.0,
+            centerLat = 11.0647, centerLng = 77.0931, radius = 22.0,
             type = "Terrain", severity = "Critical",
             description = "The ultimate danger zone. No phones, no notes, no mercy. Only your brain vs the question paper. Good luck.",
             verified = true

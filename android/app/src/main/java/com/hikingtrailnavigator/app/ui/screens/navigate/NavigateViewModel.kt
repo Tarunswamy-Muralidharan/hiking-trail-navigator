@@ -100,7 +100,8 @@ class ActiveHikeViewModel @Inject constructor(
     private val fallDetectionService: FallDetectionService,
     private val emergencyService: EmergencyService,
     private val sosAlertDao: com.hikingtrailnavigator.app.data.local.dao.SosAlertDao,
-    private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager
+    private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager,
+    private val sosNotificationService: com.hikingtrailnavigator.app.service.SosNotificationService
 ) : ViewModel() {
 
     private val trailId: String = savedStateHandle["trailId"] ?: ""
@@ -196,15 +197,21 @@ class ActiveHikeViewModel @Inject constructor(
                     val loc = _uiState.value.currentLocation ?: return@launch
                     emergencyService.sendSosToContacts(loc)
                     val trail = _uiState.value.trail
+                    val hikerName = sessionManager.getHikerName()
+                    val msg = "Missed safety check-in - no response"
                     sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
                         id = UUID.randomUUID().toString(),
-                        hikerName = sessionManager.getHikerName(),
+                        hikerName = hikerName,
                         trailId = trail?.id ?: "", trailName = trail?.name ?: "",
                         alertType = "CHECKIN_MISSED",
                         latitude = loc.latitude, longitude = loc.longitude,
                         timestamp = System.currentTimeMillis(),
-                        message = "Missed safety check-in - no response"
+                        message = msg
                     ))
+                    sosNotificationService.sendSosAlert(
+                        hikerName = hikerName, alertType = "CHECKIN_MISSED",
+                        latitude = loc.latitude, longitude = loc.longitude, message = msg
+                    )
                 }
             }
         }
@@ -239,15 +246,21 @@ class ActiveHikeViewModel @Inject constructor(
             val loc = _uiState.value.currentLocation ?: return@launch
             emergencyService.sendSosToContacts(loc)
             val trail = _uiState.value.trail
+            val hikerName = sessionManager.getHikerName()
+            val fallMsg = "Fall detected - no response after 30s"
             sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
                 id = UUID.randomUUID().toString(),
-                hikerName = sessionManager.getHikerName(),
+                hikerName = hikerName,
                 trailId = trail?.id ?: "", trailName = trail?.name ?: "",
                 alertType = "FALL_DETECTED",
                 latitude = loc.latitude, longitude = loc.longitude,
                 timestamp = System.currentTimeMillis(),
-                message = "Fall detected - no response after 30s"
+                message = fallMsg
             ))
+            sosNotificationService.sendSosAlert(
+                hikerName = hikerName, alertType = "FALL_DETECTED",
+                latitude = loc.latitude, longitude = loc.longitude, message = fallMsg
+            )
             _uiState.update { it.copy(showFallDetectedDialog = false) }
         }
     }

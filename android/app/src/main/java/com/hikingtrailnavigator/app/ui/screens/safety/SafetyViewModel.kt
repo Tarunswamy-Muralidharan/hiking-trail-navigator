@@ -95,7 +95,8 @@ class SOSViewModel @Inject constructor(
     private val connectivityService: ConnectivityService,
     private val api: HikerApi,
     private val sosAlertDao: com.hikingtrailnavigator.app.data.local.dao.SosAlertDao,
-    private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager
+    private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager,
+    private val sosNotificationService: com.hikingtrailnavigator.app.service.SosNotificationService
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SosUiState())
@@ -144,15 +145,26 @@ class SOSViewModel @Inject constructor(
             _uiState.update { it.copy(contactsNotified = count) }
 
             // Insert SOS alert for admin dashboard
+            val hikerName = sessionManager.getHikerName()
+            val sosMessage = "Hiker pressed SOS button"
             sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
                 id = UUID.randomUUID().toString(),
-                hikerName = sessionManager.getHikerName(),
+                hikerName = hikerName,
                 trailId = "", trailName = "Unknown",
                 alertType = "SOS_BUTTON",
                 latitude = actualLoc.latitude, longitude = actualLoc.longitude,
                 timestamp = System.currentTimeMillis(),
-                message = "Hiker pressed SOS button"
+                message = sosMessage
             ))
+
+            // Send notification to admin
+            sosNotificationService.sendSosAlert(
+                hikerName = hikerName,
+                alertType = "SOS_BUTTON",
+                latitude = actualLoc.latitude,
+                longitude = actualLoc.longitude,
+                message = sosMessage
+            )
 
             // 2. Try API call if online (non-blocking)
             try {
@@ -193,6 +205,26 @@ class SOSViewModel @Inject constructor(
             emergencyService.sendSosToAllContacts(actualLoc)
             val count = contactRepository.getContactCount() + 2
             _uiState.update { it.copy(contactsNotified = count) }
+
+            // Insert SOS alert + notify admin for silent SOS too
+            val hikerName = sessionManager.getHikerName()
+            val sosMessage = "Silent SOS activated"
+            sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
+                id = UUID.randomUUID().toString(),
+                hikerName = hikerName,
+                trailId = "", trailName = "Unknown",
+                alertType = "SOS_BUTTON",
+                latitude = actualLoc.latitude, longitude = actualLoc.longitude,
+                timestamp = System.currentTimeMillis(),
+                message = sosMessage
+            ))
+            sosNotificationService.sendSosAlert(
+                hikerName = hikerName,
+                alertType = "SOS_BUTTON",
+                latitude = actualLoc.latitude,
+                longitude = actualLoc.longitude,
+                message = sosMessage
+            )
 
             try {
                 api.triggerSilentSos(

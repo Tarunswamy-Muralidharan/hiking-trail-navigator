@@ -18,7 +18,7 @@ import com.hikingtrailnavigator.app.data.local.entity.*
         RouteWarningEntity::class,
         SosAlertEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
