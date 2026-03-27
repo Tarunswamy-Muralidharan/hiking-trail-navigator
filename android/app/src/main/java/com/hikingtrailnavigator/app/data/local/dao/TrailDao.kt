@@ -130,6 +130,95 @@ interface SosAlertDao {
     suspend fun resolve(id: String)
 }
 
+// ── UML DAOs ──
+
+@Dao
+interface UserDao {
+    @Query("SELECT * FROM users WHERE userId = :id")
+    suspend fun getUserById(id: String): UserEntity?
+
+    @Query("SELECT * FROM users WHERE email = :email")
+    suspend fun getUserByEmail(email: String): UserEntity?
+
+    @Query("SELECT * FROM users WHERE role = :role")
+    fun getUsersByRole(role: String): Flow<List<UserEntity>>
+
+    @Query("SELECT * FROM users WHERE role = 'ForestOfficer'")
+    fun getForestOfficers(): Flow<List<UserEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(user: UserEntity)
+
+    @Query("UPDATE users SET currentTrailId = :trailId WHERE userId = :userId")
+    suspend fun updateCurrentTrail(userId: String, trailId: String?)
+}
+
+@Dao
+interface HikeSessionDao {
+    @Query("SELECT * FROM hike_sessions WHERE hikerId = :hikerId ORDER BY startTime DESC")
+    fun getSessionsByHiker(hikerId: String): Flow<List<HikeSessionEntity>>
+
+    @Query("SELECT * FROM hike_sessions WHERE sessionId = :id")
+    suspend fun getSessionById(id: String): HikeSessionEntity?
+
+    @Query("SELECT * FROM hike_sessions WHERE status = 'Active' ORDER BY startTime DESC")
+    fun getActiveSessions(): Flow<List<HikeSessionEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(session: HikeSessionEntity)
+
+    @Query("UPDATE hike_sessions SET status = :status WHERE sessionId = :id")
+    suspend fun updateStatus(id: String, status: String)
+
+    @Query("UPDATE hike_sessions SET endTime = :endTime, status = 'Completed' WHERE sessionId = :id")
+    suspend fun endSession(id: String, endTime: Long)
+}
+
+@Dao
+interface LocationDao {
+    @Query("SELECT * FROM locations WHERE sessionId = :sessionId ORDER BY timestamp ASC")
+    fun getLocationsBySession(sessionId: String): Flow<List<LocationEntity>>
+
+    @Query("SELECT * FROM locations WHERE sessionId = :sessionId ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLastLocation(sessionId: String): LocationEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(location: LocationEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(locations: List<LocationEntity>)
+}
+
+@Dao
+interface NotificationDao {
+    @Query("SELECT * FROM notifications WHERE recipientId = :recipientId ORDER BY timestamp DESC")
+    fun getNotificationsForUser(recipientId: String): Flow<List<NotificationEntity>>
+
+    @Query("SELECT * FROM notifications WHERE alertId = :alertId")
+    fun getNotificationsForAlert(alertId: String): Flow<List<NotificationEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(notification: NotificationEntity)
+
+    @Query("UPDATE notifications SET status = :status WHERE notificationId = :id")
+    suspend fun updateStatus(id: String, status: String)
+}
+
+@Dao
+interface SafetyCheckInDao {
+    @Query("SELECT * FROM safety_checkins WHERE sessionId = :sessionId ORDER BY scheduledTime DESC")
+    fun getCheckInsForSession(sessionId: String): Flow<List<SafetyCheckInEntity>>
+
+    @Query("SELECT * FROM safety_checkins WHERE sessionId = :sessionId AND responseStatus = 'pending' ORDER BY scheduledTime ASC")
+    suspend fun getPendingCheckIns(sessionId: String): List<SafetyCheckInEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(checkIn: SafetyCheckInEntity)
+
+    @Query("UPDATE safety_checkins SET responseStatus = :status WHERE checkInId = :id")
+    suspend fun updateStatus(id: String, status: String)
+}
+
 @Dao
 interface RouteWarningDao {
     @Query("SELECT * FROM route_warnings WHERE isActive = 1 ORDER BY reportedAt DESC")

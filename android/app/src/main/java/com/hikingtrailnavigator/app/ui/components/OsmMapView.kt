@@ -63,6 +63,7 @@ fun OsmMapView(
     cameraMoveKey: Int = 0,
     useSatellite: Boolean = false,
     showMyLocation: Boolean = false,
+    followMyLocation: Boolean = false,
     markers: List<MapMarker> = emptyList(),
     polylines: List<MapPolyline> = emptyList(),
     circles: List<MapCircle> = emptyList(),
@@ -99,7 +100,11 @@ fun OsmMapView(
                     }
                     val locOverlay = MyLocationNewOverlay(locationProvider, mapViewRef).apply {
                         enableMyLocation()
-                        enableFollowLocation()
+
+                        // Only follow user's GPS if explicitly requested
+                        if (followMyLocation) {
+                            enableFollowLocation()
+                        }
 
                         // Custom blue dot
                         val dotSize = 48
@@ -124,11 +129,14 @@ fun OsmMapView(
                         setPersonIcon(personBmp)
                         setDirectionIcon(personBmp)
 
-                        runOnFirstFix {
-                            val loc = myLocation
-                            if (loc != null) {
-                                mapViewRef.post {
-                                    mapViewRef.controller.animateTo(loc, 18.0, 1000L)
+                        // Only snap to user location if followMyLocation is true
+                        if (followMyLocation) {
+                            runOnFirstFix {
+                                val loc = myLocation
+                                if (loc != null) {
+                                    mapViewRef.post {
+                                        mapViewRef.controller.animateTo(loc, 18.0, 1000L)
+                                    }
                                 }
                             }
                         }

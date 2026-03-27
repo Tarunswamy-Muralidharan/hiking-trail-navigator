@@ -105,3 +105,98 @@ class EmergencyContactRepository @Inject constructor(
 
     suspend fun getContactCount(): Int = contactDao.getContactCount()
 }
+
+// ── UML Repositories ──
+
+@Singleton
+class UserRepository @Inject constructor(
+    private val userDao: UserDao
+) {
+    suspend fun getUserById(id: String): User? =
+        userDao.getUserById(id)?.toDomainUser()
+
+    suspend fun getUserByEmail(email: String): User? =
+        userDao.getUserByEmail(email)?.toDomainUser()
+
+    fun getForestOfficers(): Flow<List<User>> =
+        userDao.getForestOfficers().map { entities -> entities.map { it.toDomainUser() } }
+
+    suspend fun createUser(user: User, passwordHash: String = "") {
+        val entity = user.toEntity().copy(passwordHash = passwordHash)
+        userDao.insert(entity)
+    }
+
+    suspend fun updateCurrentTrail(userId: String, trailId: String?) =
+        userDao.updateCurrentTrail(userId, trailId)
+}
+
+@Singleton
+class HikeSessionRepository @Inject constructor(
+    private val sessionDao: HikeSessionDao,
+    private val locationDao: LocationDao
+) {
+    fun getSessionsByHiker(hikerId: String): Flow<List<HikeSession>> =
+        sessionDao.getSessionsByHiker(hikerId).map { entities -> entities.map { it.toDomain() } }
+
+    fun getActiveSessions(): Flow<List<HikeSession>> =
+        sessionDao.getActiveSessions().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun getSessionById(id: String): HikeSession? =
+        sessionDao.getSessionById(id)?.toDomain()
+
+    suspend fun startSession(session: HikeSession) =
+        sessionDao.insert(session.toEntity())
+
+    suspend fun endSession(sessionId: String) =
+        sessionDao.endSession(sessionId, System.currentTimeMillis())
+
+    suspend fun updateStatus(sessionId: String, status: HikeStatus) =
+        sessionDao.updateStatus(sessionId, status.name)
+
+    // Location tracking for session
+    suspend fun addLocation(location: Location) =
+        locationDao.insert(location.toEntity())
+
+    fun getSessionLocations(sessionId: String): Flow<List<Location>> =
+        locationDao.getLocationsBySession(sessionId).map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun getLastLocation(sessionId: String): Location? =
+        locationDao.getLastLocation(sessionId)?.toDomain()
+}
+
+@Singleton
+class NotificationRepository @Inject constructor(
+    private val notificationDao: NotificationDao
+) {
+    fun getNotificationsForUser(userId: String): Flow<List<Notification>> =
+        notificationDao.getNotificationsForUser(userId).map { entities -> entities.map { it.toDomain() } }
+
+    fun getNotificationsForAlert(alertId: String): Flow<List<Notification>> =
+        notificationDao.getNotificationsForAlert(alertId).map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun sendNotification(notification: Notification) =
+        notificationDao.insert(notification.toEntity())
+
+    suspend fun markAsRead(notificationId: String) =
+        notificationDao.updateStatus(notificationId, "read")
+}
+
+@Singleton
+class SafetyCheckInRepository @Inject constructor(
+    private val checkInDao: SafetyCheckInDao
+) {
+    fun getCheckInsForSession(sessionId: String): Flow<List<SafetyCheckIn>> =
+        checkInDao.getCheckInsForSession(sessionId).map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun scheduleCheckIn(checkIn: SafetyCheckIn) =
+        checkInDao.insert(checkIn.toEntity())
+
+    suspend fun confirmCheckIn(checkInId: String) =
+        checkInDao.updateStatus(checkInId, "confirmed")
+
+    suspend fun markMissed(checkInId: String) =
+        checkInDao.updateStatus(checkInId, "missed")
+
+    suspend fun getPendingCheckIns(sessionId: String): List<SafetyCheckIn> =
+        checkInDao.getPendingCheckIns(sessionId).map { it.toDomain() }
+}

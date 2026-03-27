@@ -12,6 +12,9 @@ sealed class Screen(val route: String) {
         fun createRoute(trailId: String) = "trail/$trailId"
     }
     data object Navigate : Screen("navigate")
+    data object Directions : Screen("directions/{trailId}") {
+        fun createRoute(trailId: String) = "directions/$trailId"
+    }
     data object ActiveHike : Screen("active_hike/{trailId}") {
         fun createRoute(trailId: String) = "active_hike/$trailId"
     }

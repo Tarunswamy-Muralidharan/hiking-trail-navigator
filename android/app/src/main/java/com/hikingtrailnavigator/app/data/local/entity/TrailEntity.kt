@@ -119,6 +119,64 @@ data class SosAlertEntity(
     val message: String = ""
 )
 
+// ── UML: User Entity (supports Hiker, ForestOfficer, Admin via role) ──
+@Entity(tableName = "users")
+data class UserEntity(
+    @PrimaryKey val userId: String,
+    val name: String,
+    val email: String,
+    val phoneNumber: String,
+    val role: String, // Hiker, ForestOfficer, Admin
+    val experienceLevel: String? = null,    // Hiker-specific
+    val emergencyContact: String? = null,   // Hiker-specific
+    val currentTrailId: String? = null,     // Hiker-specific
+    val badgeNumber: String? = null,        // ForestOfficer-specific
+    val assignedRegion: String? = null,     // ForestOfficer/Admin-specific
+    val passwordHash: String = ""
+)
+
+// ── UML: HikeSession Entity ──
+@Entity(tableName = "hike_sessions")
+data class HikeSessionEntity(
+    @PrimaryKey val sessionId: String,
+    val hikerId: String,
+    val trailId: String,
+    val trailName: String,
+    val startTime: Long,
+    val endTime: Long? = null,
+    val status: String = "NotStarted" // NotStarted, Active, Paused, Completed, Emergency
+)
+
+// ── UML: Location Entity (tracked points during hike) ──
+@Entity(tableName = "locations")
+data class LocationEntity(
+    @PrimaryKey val id: String,
+    val latitude: Double,
+    val longitude: Double,
+    val timestamp: Long,
+    val sessionId: String
+)
+
+// ── UML: Notification Entity ──
+@Entity(tableName = "notifications")
+data class NotificationEntity(
+    @PrimaryKey val notificationId: String,
+    val alertId: String = "",
+    val recipientId: String = "",
+    val message: String,
+    val timestamp: Long,
+    val status: String = "pending" // pending, sent, read
+)
+
+// ── UML: SafetyCheckIn Entity ──
+@Entity(tableName = "safety_checkins")
+data class SafetyCheckInEntity(
+    @PrimaryKey val checkInId: String,
+    val sessionId: String,
+    val scheduledTime: Long,
+    val responseStatus: String = "pending" // pending, confirmed, missed
+)
+
 @Entity(tableName = "route_warnings")
 data class RouteWarningEntity(
     @PrimaryKey val id: String,
@@ -252,4 +310,97 @@ fun EmergencyContactEntity.toDomain() = EmergencyContact(
 
 fun EmergencyContact.toEntity() = EmergencyContactEntity(
     id = id, name = name, phone = phone, relation = relation
+)
+
+// ── UML Entity conversions ──
+
+fun UserEntity.toDomainUser(): User = when (role) {
+    "ForestOfficer" -> ForestOfficer(
+        userId = userId, name = name, email = email, phoneNumber = phoneNumber,
+        badgeNumber = badgeNumber ?: "", assignedRegion = assignedRegion ?: ""
+    )
+    "Admin" -> Admin(
+        userId = userId, name = name, email = email, phoneNumber = phoneNumber,
+        assignedRegion = assignedRegion ?: ""
+    )
+    else -> Hiker(
+        userId = userId, name = name, email = email, phoneNumber = phoneNumber,
+        experienceLevel = experienceLevel ?: "Beginner",
+        emergencyContact = emergencyContact ?: "",
+        currentTrailId = currentTrailId
+    )
+}
+
+fun User.toEntity(): UserEntity = UserEntity(
+    userId = userId, name = name, email = email, phoneNumber = phoneNumber,
+    role = role.name,
+    experienceLevel = if (this is Hiker) experienceLevel else null,
+    emergencyContact = if (this is Hiker) emergencyContact else null,
+    currentTrailId = if (this is Hiker) currentTrailId else null,
+    badgeNumber = if (this is ForestOfficer) badgeNumber else null,
+    assignedRegion = when (this) {
+        is ForestOfficer -> assignedRegion
+        is Admin -> assignedRegion
+        else -> null
+    }
+)
+
+fun HikeSessionEntity.toDomain() = HikeSession(
+    sessionId = sessionId, hikerId = hikerId, trailId = trailId,
+    trailName = trailName, startTime = startTime, endTime = endTime,
+    status = HikeStatus.valueOf(status)
+)
+
+fun HikeSession.toEntity() = HikeSessionEntity(
+    sessionId = sessionId, hikerId = hikerId, trailId = trailId,
+    trailName = trailName, startTime = startTime, endTime = endTime,
+    status = status.name
+)
+
+fun LocationEntity.toDomain() = Location(
+    id = id, latitude = latitude, longitude = longitude,
+    timestamp = timestamp, sessionId = sessionId
+)
+
+fun Location.toEntity() = LocationEntity(
+    id = id, latitude = latitude, longitude = longitude,
+    timestamp = timestamp, sessionId = sessionId
+)
+
+fun SosAlertEntity.toDomainAlert() = SOSAlert(
+    alertId = id, hikerName = hikerName, trailId = trailId,
+    trailName = trailName, alertType = alertType,
+    latitude = latitude, longitude = longitude,
+    createdTime = timestamp, status = if (isResolved) "resolved" else "active",
+    message = message
+)
+
+fun SOSAlert.toSosEntity() = SosAlertEntity(
+    id = alertId, hikerName = hikerName, trailId = trailId,
+    trailName = trailName, alertType = alertType,
+    latitude = latitude, longitude = longitude,
+    timestamp = createdTime, isResolved = status == "resolved",
+    message = message
+)
+
+fun NotificationEntity.toDomain() = Notification(
+    notificationId = notificationId, alertId = alertId,
+    recipientId = recipientId, message = message,
+    timestamp = timestamp, status = status
+)
+
+fun Notification.toEntity() = NotificationEntity(
+    notificationId = notificationId, alertId = alertId,
+    recipientId = recipientId, message = message,
+    timestamp = timestamp, status = status
+)
+
+fun SafetyCheckInEntity.toDomain() = SafetyCheckIn(
+    checkInId = checkInId, sessionId = sessionId,
+    scheduledTime = scheduledTime, responseStatus = responseStatus
+)
+
+fun SafetyCheckIn.toEntity() = SafetyCheckInEntity(
+    checkInId = checkInId, sessionId = sessionId,
+    scheduledTime = scheduledTime, responseStatus = responseStatus
 )

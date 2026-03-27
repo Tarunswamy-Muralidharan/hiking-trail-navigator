@@ -29,6 +29,7 @@ import com.hikingtrailnavigator.app.ui.screens.navigate.NavigateScreen
 import com.hikingtrailnavigator.app.ui.screens.profile.ProfileScreen
 import com.hikingtrailnavigator.app.ui.screens.profile.SettingsScreen
 import com.hikingtrailnavigator.app.ui.screens.safety.*
+import com.hikingtrailnavigator.app.ui.screens.trails.DirectionsScreen
 import com.hikingtrailnavigator.app.ui.screens.trails.TrailDetailScreen
 import com.hikingtrailnavigator.app.ui.screens.trails.TrailListScreen
 import com.hikingtrailnavigator.app.ui.theme.Primary
@@ -124,6 +125,23 @@ fun HikerApp() {
                     onBack = { navController.popBackStack() },
                     onStartHike = { trailId ->
                         navController.navigate(Screen.ActiveHike.createRoute(trailId))
+                    },
+                    onDirections = { trailId ->
+                        navController.navigate(Screen.Directions.createRoute(trailId))
+                    }
+                )
+            }
+
+            composable(
+                route = Screen.Directions.route,
+                arguments = listOf(navArgument("trailId") { type = NavType.StringType })
+            ) {
+                DirectionsScreen(
+                    onBack = { navController.popBackStack() },
+                    onStartHike = { trailId ->
+                        navController.navigate(Screen.ActiveHike.createRoute(trailId)) {
+                            popUpTo(Screen.Directions.route) { inclusive = true }
+                        }
                     }
                 )
             }

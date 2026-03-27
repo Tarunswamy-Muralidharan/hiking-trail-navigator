@@ -26,6 +26,7 @@ import com.hikingtrailnavigator.app.ui.theme.*
 fun TrailDetailScreen(
     onBack: () -> Unit,
     onStartHike: (String) -> Unit,
+    onDirections: (String) -> Unit = {},
     viewModel: TrailDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -46,27 +47,75 @@ fun TrailDetailScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            // Map preview (OpenStreetMap)
-            Box(modifier = Modifier.fillMaxWidth().height(200.dp)) {
-                OsmMapView(
-                    modifier = Modifier.fillMaxSize(),
-                    centerLat = trail.startPoint.latitude,
-                    centerLng = trail.startPoint.longitude,
-                    zoomLevel = 12.0,
-                    markers = listOf(
-                        MapMarker(position = trail.startPoint, title = "Start"),
-                        MapMarker(position = trail.endPoint, title = "End")
-                    ),
-                    polylines = if (trail.coordinates.isNotEmpty()) {
-                        listOf(
-                            MapPolyline(
-                                points = trail.coordinates,
-                                color = AndroidColor.rgb(46, 125, 50),
-                                width = 5f
+            // Map preview — satellite view centered on this trail's location
+            Box(modifier = Modifier.fillMaxWidth().height(250.dp)) {
+                // key(trail.id) forces map recreation when switching trails
+                key(trail.id) {
+                    OsmMapView(
+                        modifier = Modifier.fillMaxSize(),
+                        centerLat = (trail.startPoint.latitude + trail.endPoint.latitude) / 2,
+                        centerLng = (trail.startPoint.longitude + trail.endPoint.longitude) / 2,
+                        zoomLevel = 13.5,
+                        useSatellite = true,
+                        markers = listOf(
+                            MapMarker(
+                                position = trail.startPoint,
+                                title = "Start",
+                                color = AndroidColor.rgb(0, 200, 83)
+                            ),
+                            MapMarker(
+                                position = trail.endPoint,
+                                title = "End",
+                                color = AndroidColor.RED
                             )
+                        ),
+                        polylines = if (trail.coordinates.isNotEmpty()) {
+                            listOf(
+                                // Outer glow (wider, semi-transparent)
+                                MapPolyline(
+                                    points = trail.coordinates,
+                                    color = AndroidColor.argb(100, 0, 200, 83),
+                                    width = 14f
+                                ),
+                                // Main safe route path (bright green)
+                                MapPolyline(
+                                    points = trail.coordinates,
+                                    color = AndroidColor.rgb(0, 200, 83),
+                                    width = 6f
+                                )
+                            )
+                        } else emptyList()
+                    )
+                }
+
+                // "Safe Route" label overlay
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(8.dp),
+                    color = Color(0xFF00C853),
+                    shape = RoundedCornerShape(8.dp),
+                    shadowElevation = 4.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Route,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
                         )
-                    } else emptyList()
-                )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            "Safe Route",
+                            color = Color.White,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
 
             // Stats row
@@ -255,19 +304,41 @@ fun TrailDetailScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Start Hike button
-            Button(
-                onClick = { onStartHike(trail.id) },
+            // Directions + Start Hike buttons
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                shape = RoundedCornerShape(12.dp)
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.PlayArrow, null)
-                Spacer(Modifier.width(8.dp))
-                Text("Start Hike", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                // Directions button
+                OutlinedButton(
+                    onClick = { onDirections(trail.id) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Primary),
+                    border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+                ) {
+                    Icon(Icons.Default.Directions, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Directions", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
+
+                // Start Hike button
+                Button(
+                    onClick = { onStartHike(trail.id) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(52.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.PlayArrow, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Start Hike", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))

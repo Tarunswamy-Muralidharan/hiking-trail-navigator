@@ -7,6 +7,7 @@ import com.hikingtrailnavigator.app.data.remote.SosRequest
 import com.hikingtrailnavigator.app.data.repository.EmergencyContactRepository
 import com.hikingtrailnavigator.app.data.repository.HazardRepository
 import com.hikingtrailnavigator.app.data.repository.TrailRepository
+import com.hikingtrailnavigator.app.data.local.entity.toSosEntity
 import com.hikingtrailnavigator.app.domain.model.*
 import com.hikingtrailnavigator.app.service.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -96,7 +97,8 @@ class SOSViewModel @Inject constructor(
     private val api: HikerApi,
     private val sosAlertDao: com.hikingtrailnavigator.app.data.local.dao.SosAlertDao,
     private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager,
-    private val sosNotificationService: com.hikingtrailnavigator.app.service.SosNotificationService
+    private val sosNotificationService: com.hikingtrailnavigator.app.service.SosNotificationService,
+    private val notificationRepository: com.hikingtrailnavigator.app.data.repository.NotificationRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SosUiState())
@@ -110,6 +112,18 @@ class SOSViewModel @Inject constructor(
         }
     }
 
+    /**
+     * UML Sequence Diagram Flow (Exp 4):
+     * 1. Hiker initiates triggerSOS() to HikeSession
+     * 2. HikeSession calls getCurrentLocation() from Location
+     * 3. Location returns currentCoordinates to HikeSession
+     * 4. HikeSession invokes createSOSAlert(currentCoordinates) on SOSAlert
+     * 5. SOSAlert performs logAlert()
+     * 6. SOSAlert sends sendAlert(forestOfficer) to Notification
+     * 7. Notification invokes notifySOS(alertDetails) to ForestOfficer
+     * 8. ForestOfficer responds with acknowledgeAlert()
+     * 9. System sends sendConfirmation() back to Hiker
+     */
     fun activateSos(location: LatLng?) {
         _uiState.update {
             it.copy(
@@ -125,7 +139,7 @@ class SOSViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Get real GPS location
+            // Step 2-3: getCurrentLocation() from Location
             val loc = location ?: emergencyService.getCurrentLocation()
             _uiState.update {
                 it.copy(
@@ -138,42 +152,63 @@ class SOSViewModel @Inject constructor(
             }
 
             val actualLoc = loc ?: LatLng(0.0, 0.0)
-
-            // 1. Always send SMS (works offline) - to user contacts + forest officers
-            emergencyService.sendSosToAllContacts(actualLoc)
-            val count = contactRepository.getContactCount() + 2 // +2 for forest dept contacts
-            _uiState.update { it.copy(contactsNotified = count) }
-
-            // Insert SOS alert for admin dashboard
             val hikerName = sessionManager.getHikerName()
-            val sosMessage = "Hiker pressed SOS button"
-            sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
-                id = UUID.randomUUID().toString(),
+
+            // Step 4: createSOSAlert(currentCoordinates)
+            val alertId = UUID.randomUUID().toString()
+            val sosAlert = SOSAlert(
+                alertId = alertId,
+                hikerId = sessionManager.getUserId(),
                 hikerName = hikerName,
                 trailId = "", trailName = "Unknown",
                 alertType = "SOS_BUTTON",
-                latitude = actualLoc.latitude, longitude = actualLoc.longitude,
-                timestamp = System.currentTimeMillis(),
-                message = sosMessage
-            ))
+                latitude = actualLoc.latitude,
+                longitude = actualLoc.longitude,
+                createdTime = System.currentTimeMillis(),
+                status = "active",
+                message = "Hiker pressed SOS button"
+            )
 
-            // Send notification to admin
+            // Step 5: logAlert() - persist to database
+            sosAlertDao.insert(sosAlert.toSosEntity())
+
+            // Step 1: Send SMS to all contacts + forest officers (works offline)
+            emergencyService.sendSosToAllContacts(actualLoc)
+            val count = contactRepository.getContactCount() + 2
+            _uiState.update { it.copy(contactsNotified = count) }
+
+            // Step 6: sendAlert(forestOfficer) to Notification
+            val notification = Notification(
+                notificationId = UUID.randomUUID().toString(),
+                alertId = alertId,
+                recipientId = "officer_1",
+                message = "SOS ALERT: $hikerName needs help! GPS: ${actualLoc.latitude}, ${actualLoc.longitude}",
+                timestamp = System.currentTimeMillis(),
+                status = "sent"
+            )
+            notificationRepository.sendNotification(notification)
+
+            // Step 7: notifySOS(alertDetails) to ForestOfficer - Android notification
             sosNotificationService.sendSosAlert(
                 hikerName = hikerName,
                 alertType = "SOS_BUTTON",
                 latitude = actualLoc.latitude,
                 longitude = actualLoc.longitude,
-                message = sosMessage
+                message = sosAlert.message
             )
 
-            // 2. Try API call if online (non-blocking)
+            // Step 9: sendConfirmation() back to Hiker
+            _uiState.update {
+                it.copy(sosMessage = "SOS confirmed! Forest officer notified. $count contacts alerted.")
+            }
+
+            // Try API call if online (non-blocking)
             try {
                 api.triggerSos(
-                    SosRequest(userId = "local_user", latitude = actualLoc.latitude, longitude = actualLoc.longitude)
+                    SosRequest(userId = sessionManager.getUserId().ifEmpty { "local_user" },
+                        latitude = actualLoc.latitude, longitude = actualLoc.longitude)
                 )
-            } catch (_: Exception) {
-                // Offline or server unreachable - SMS already sent
-            }
+            } catch (_: Exception) {}
         }
     }
 
@@ -188,8 +223,6 @@ class SOSViewModel @Inject constructor(
             )
         }
 
-        // No vibration for silent SOS
-
         viewModelScope.launch {
             val loc = location ?: emergencyService.getCurrentLocation()
             _uiState.update {
@@ -201,34 +234,49 @@ class SOSViewModel @Inject constructor(
             }
 
             val actualLoc = loc ?: LatLng(0.0, 0.0)
+            val hikerName = sessionManager.getHikerName()
 
             emergencyService.sendSosToAllContacts(actualLoc)
             val count = contactRepository.getContactCount() + 2
             _uiState.update { it.copy(contactsNotified = count) }
 
-            // Insert SOS alert + notify admin for silent SOS too
-            val hikerName = sessionManager.getHikerName()
-            val sosMessage = "Silent SOS activated"
-            sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
-                id = UUID.randomUUID().toString(),
+            val alertId = UUID.randomUUID().toString()
+            val sosAlert = SOSAlert(
+                alertId = alertId,
+                hikerId = sessionManager.getUserId(),
                 hikerName = hikerName,
                 trailId = "", trailName = "Unknown",
                 alertType = "SOS_BUTTON",
                 latitude = actualLoc.latitude, longitude = actualLoc.longitude,
-                timestamp = System.currentTimeMillis(),
-                message = sosMessage
-            ))
+                createdTime = System.currentTimeMillis(),
+                status = "active",
+                message = "Silent SOS activated"
+            )
+            sosAlertDao.insert(sosAlert.toSosEntity())
+
+            // Persist notification (UML: Notification entity)
+            notificationRepository.sendNotification(
+                Notification(
+                    notificationId = UUID.randomUUID().toString(),
+                    alertId = alertId,
+                    recipientId = "officer_1",
+                    message = "SILENT SOS: $hikerName needs help! GPS: ${actualLoc.latitude}, ${actualLoc.longitude}",
+                    status = "sent"
+                )
+            )
+
             sosNotificationService.sendSosAlert(
                 hikerName = hikerName,
                 alertType = "SOS_BUTTON",
                 latitude = actualLoc.latitude,
                 longitude = actualLoc.longitude,
-                message = sosMessage
+                message = sosAlert.message
             )
 
             try {
                 api.triggerSilentSos(
-                    SosRequest(userId = "local_user", latitude = actualLoc.latitude, longitude = actualLoc.longitude)
+                    SosRequest(userId = sessionManager.getUserId().ifEmpty { "local_user" },
+                        latitude = actualLoc.latitude, longitude = actualLoc.longitude)
                 )
             } catch (_: Exception) {}
         }
@@ -237,7 +285,7 @@ class SOSViewModel @Inject constructor(
     fun cancelSos() {
         _uiState.update { SosUiState() }
         viewModelScope.launch {
-            try { api.cancelSos(mapOf("userId" to "local_user")) } catch (_: Exception) {}
+            try { api.cancelSos(mapOf("userId" to sessionManager.getUserId().ifEmpty { "local_user" })) } catch (_: Exception) {}
         }
     }
 

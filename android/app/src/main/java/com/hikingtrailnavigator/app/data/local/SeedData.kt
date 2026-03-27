@@ -275,33 +275,32 @@ object SeedData {
             elevationGain = 15,
             rating = 4.9,
             coordinates = listOf(
-                LatLng(11.0632, 77.0938), // Main gate - Avinashi Road entrance
-                LatLng(11.0635, 77.0937), // Security checkpoint
-                LatLng(11.0638, 77.0936), // Main driveway heading north
-                LatLng(11.0641, 77.0935), // Admin block driveway junction
-                LatLng(11.0644, 77.0933), // Admin/office block front
-                LatLng(11.0647, 77.0931), // Central connector corridor
-                LatLng(11.0650, 77.0929), // S&H block junction
-                LatLng(11.0653, 77.0926), // CSE department block
-                LatLng(11.0656, 77.0924), // IT/ECE block area
-                LatLng(11.0659, 77.0923), // North campus road - turn east
-                LatLng(11.0661, 77.0926), // Along north boundary road
-                LatLng(11.0662, 77.0930), // Sports ground access
-                LatLng(11.0662, 77.0935), // Sports ground east side
-                LatLng(11.0661, 77.0940), // Turn south along east campus road
-                LatLng(11.0658, 77.0943), // Workshop/lab complex
-                LatLng(11.0655, 77.0945), // Library building
-                LatLng(11.0652, 77.0946), // Library garden area
-                LatLng(11.0649, 77.0945), // Canteen junction
-                LatLng(11.0646, 77.0943), // Canteen / food court
-                LatLng(11.0643, 77.0942), // South campus connector
-                LatLng(11.0640, 77.0941), // Parking lot east side
-                LatLng(11.0637, 77.0940), // Near bus bay
-                LatLng(11.0635, 77.0939), // Return toward main drive
-                LatLng(11.0632, 77.0938)  // Back to main gate
+                LatLng(11.0640, 77.0929), // Main gate area - campus entrance driveway
+                LatLng(11.0643, 77.0928), // Walk north on driveway past parking
+                LatLng(11.0645, 77.0928), // Enter campus building area - south corridor
+                LatLng(11.0646, 77.0929), // Turn east on walkway between blocks
+                LatLng(11.0646, 77.0931), // Continue east between building rows
+                LatLng(11.0646, 77.0933), // Reach eastern walkway of building cluster
+                LatLng(11.0648, 77.0933), // Turn north on eastern corridor past labs
+                LatLng(11.0650, 77.0933), // Continue north between east buildings
+                LatLng(11.0652, 77.0933), // Pass CSE / IT department corridor
+                LatLng(11.0654, 77.0933), // Continue north past department blocks
+                LatLng(11.0656, 77.0932), // North end of building cluster - turn west
+                LatLng(11.0656, 77.0930), // Walk west along north building corridor
+                LatLng(11.0656, 77.0928), // Continue west
+                LatLng(11.0656, 77.0926), // Northwest corner of building cluster
+                LatLng(11.0654, 77.0925), // Turn south on western corridor
+                LatLng(11.0652, 77.0925), // Continue south past west buildings
+                LatLng(11.0650, 77.0925), // Continue south on west corridor
+                LatLng(11.0648, 77.0925), // Pass western department blocks
+                LatLng(11.0646, 77.0925), // Southwest corner of building cluster
+                LatLng(11.0646, 77.0927), // Turn east back toward main driveway
+                LatLng(11.0645, 77.0928), // Rejoin main driveway
+                LatLng(11.0643, 77.0928), // Head south toward gate
+                LatLng(11.0640, 77.0929)  // Back to main gate
             ),
-            startPoint = LatLng(11.0632, 77.0938),
-            endPoint = LatLng(11.0632, 77.0938),
+            startPoint = LatLng(11.0640, 77.0929),
+            endPoint = LatLng(11.0640, 77.0929),
             hazards = listOf("Faculty supervision required", "Attendance shortage risk", "Canteen temptation", "HOD sighting zone"),
             region = "Coimbatore",
             popularity = 100,
@@ -384,56 +383,56 @@ object SeedData {
         ),
         DangerZoneEntity(
             id = "dz_7", name = "Canteen - Food Trap",
-            centerLat = 11.0646, centerLng = 77.0943, radius = 25.0,
+            centerLat = 11.0646, centerLng = 77.0931, radius = 15.0,
             type = "Terrain", severity = "Critical",
             description = "High food temptation zone. Biriyani aroma radius: 50m. Budget may not survive. Students often get stuck here for hours.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_8", name = "HOD Office - No Entry Zone",
-            centerLat = 11.0644, centerLng = 77.0933, radius = 15.0,
+            centerLat = 11.0654, centerLng = 77.0929, radius = 10.0,
             type = "Restricted", severity = "Critical",
             description = "Attendance verification zone. Avoid if bunking. High risk of getting caught. Survival rate: 20%.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_9", name = "Library - Sleep Trap",
-            centerLat = 11.0655, centerLng = 77.0945, radius = 20.0,
+            centerLat = 11.0652, centerLng = 77.0931, radius = 12.0,
             type = "Wildlife", severity = "High",
             description = "AC + silence = guaranteed nap. Many students entered, few returned awake. Bring coffee or perish.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_10", name = "CS Lab - Code Zone",
-            centerLat = 11.0653, centerLng = 77.0926, radius = 18.0,
+            centerLat = 11.0650, centerLng = 77.0933, radius = 12.0,
             type = "Terrain", severity = "High",
             description = "OOSE Lab. Deadlines strike without warning. Segfaults and NullPointers lurk everywhere. Code or perish.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_11", name = "Parking Lot - Bike Jungle",
-            centerLat = 11.0637, centerLng = 77.0940, radius = 30.0,
+            centerLat = 11.0642, centerLng = 77.0929, radius = 15.0,
             type = "Terrain", severity = "Medium",
             description = "Peak hour chaos. Finding your bike is the real trek. Last seen: your Activa between 500 other Activas.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_12", name = "Main Gate - Checkpoint",
-            centerLat = 11.0632, centerLng = 77.0938, radius = 15.0,
+            centerLat = 11.0640, centerLng = 77.0929, radius = 10.0,
             type = "Restricted", severity = "Critical",
             description = "ID card checkpoint. No ID = no entry. Late entry logged. Security uncle remembers every face.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_13", name = "Seminar Hall - Boredom Zone",
-            centerLat = 11.0650, centerLng = 77.0929, radius = 20.0,
+            centerLat = 11.0655, centerLng = 77.0927, radius = 12.0,
             type = "Terrain", severity = "High",
             description = "3-hour seminars with no breaks. Phone confiscation risk. Back-benchers have higher survival rate.",
             verified = true
         ),
         DangerZoneEntity(
             id = "dz_14", name = "Exam Hall - Final Boss",
-            centerLat = 11.0647, centerLng = 77.0931, radius = 22.0,
+            centerLat = 11.0648, centerLng = 77.0927, radius = 12.0,
             type = "Terrain", severity = "Critical",
             description = "The ultimate danger zone. No phones, no notes, no mercy. Only your brain vs the question paper. Good luck.",
             verified = true

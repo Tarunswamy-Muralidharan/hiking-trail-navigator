@@ -39,5 +39,11 @@
             android:name=".service.LocationTrackingService"
             android:foregroundServiceType="location"
             android:exported="false" />
+
+        <provider
+            android:name=".data.provider.HikerDataProvider"
+            android:authorities="com.hikingtrailnavigator.app.provider"
+            android:exported="true"
+            android:grantUriPermissions="true" />
     </application>
 </manifest>

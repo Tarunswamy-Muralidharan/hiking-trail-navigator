@@ -4,9 +4,8 @@ import android.location.Location
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hikingtrailnavigator.app.data.repository.ActivityRepository
-import com.hikingtrailnavigator.app.data.repository.EmergencyContactRepository
-import com.hikingtrailnavigator.app.data.repository.TrailRepository
+import com.hikingtrailnavigator.app.data.local.entity.toSosEntity
+import com.hikingtrailnavigator.app.data.repository.*
 import com.hikingtrailnavigator.app.domain.model.*
 import com.hikingtrailnavigator.app.service.EmergencyService
 import com.hikingtrailnavigator.app.service.FallDetectionService
@@ -101,7 +100,10 @@ class ActiveHikeViewModel @Inject constructor(
     private val emergencyService: EmergencyService,
     private val sosAlertDao: com.hikingtrailnavigator.app.data.local.dao.SosAlertDao,
     private val sessionManager: com.hikingtrailnavigator.app.service.SessionManager,
-    private val sosNotificationService: com.hikingtrailnavigator.app.service.SosNotificationService
+    private val sosNotificationService: com.hikingtrailnavigator.app.service.SosNotificationService,
+    private val hikeSessionRepository: HikeSessionRepository,
+    private val safetyCheckInRepository: SafetyCheckInRepository,
+    private val notificationRepository: NotificationRepository
 ) : ViewModel() {
 
     private val trailId: String = savedStateHandle["trailId"] ?: ""
@@ -116,6 +118,8 @@ class ActiveHikeViewModel @Inject constructor(
     private var checkInIntervalMs = 60 * 60 * 1000L // 1 hour default
     private var dangerZones: List<DangerZone> = emptyList()
     private var noCoverageZones: List<NoCoverageZone> = emptyList()
+    // UML HikeSession tracking
+    private var currentSessionId: String = UUID.randomUUID().toString()
 
     init {
         viewModelScope.launch {
@@ -125,6 +129,19 @@ class ActiveHikeViewModel @Inject constructor(
             trail?.let {
                 checkInIntervalMs = it.checkInIntervalMinutes * 60 * 1000L
             }
+
+            // UML State Chart: LoggedIn -> selectTrail() -> SelectingTrail -> startHike() -> Hiking
+            // Create and persist HikeSession (UML: HikeSession.startHike())
+            val session = HikeSession(
+                sessionId = currentSessionId,
+                hikerId = sessionManager.getUserId().ifEmpty { "local_user" },
+                trailId = trailId,
+                trailName = trail?.name ?: "",
+                startTime = startTime,
+                status = HikeStatus.Active
+            )
+            hikeSessionRepository.startSession(session)
+            sessionManager.saveActiveSessionId(currentSessionId)
         }
 
         // Load danger zones and no-coverage zones for proactive alerts
@@ -180,34 +197,64 @@ class ActiveHikeViewModel @Inject constructor(
         }
     }
 
+    private var currentCheckInId: String? = null
+
     private fun triggerCheckIn() {
+        // UML: SafetyCheckIn - schedule and track check-in
+        val checkInId = UUID.randomUUID().toString()
+        currentCheckInId = checkInId
         _uiState.update { it.copy(showCheckInDialog = true, checkInMissed = false, checkInEscalationLevel = 0) }
+
+        viewModelScope.launch {
+            // Persist SafetyCheckIn (UML: SafetyCheckIn entity)
+            safetyCheckInRepository.scheduleCheckIn(
+                SafetyCheckIn(
+                    checkInId = checkInId,
+                    sessionId = currentSessionId,
+                    scheduledTime = System.currentTimeMillis(),
+                    responseStatus = "pending"
+                )
+            )
+        }
 
         // Escalation: if no response within 2 minutes, escalate
         viewModelScope.launch {
             delay(120_000) // 2 minutes
             if (_uiState.value.showCheckInDialog) {
                 _uiState.update { it.copy(checkInEscalationLevel = 1, checkInMissed = true) }
+                // Mark check-in as missed
+                safetyCheckInRepository.markMissed(checkInId)
 
                 // Second escalation: 2 more minutes -> auto SOS
                 delay(120_000)
                 if (_uiState.value.showCheckInDialog) {
                     _uiState.update { it.copy(checkInEscalationLevel = 2) }
-                    // Auto-trigger SOS
+                    // UML State Chart: Hiking -> DangerDetected -> triggerSOS() -> AlertSent
+                    hikeSessionRepository.updateStatus(currentSessionId, HikeStatus.Emergency)
                     val loc = _uiState.value.currentLocation ?: return@launch
                     emergencyService.sendSosToContacts(loc)
                     val trail = _uiState.value.trail
                     val hikerName = sessionManager.getHikerName()
                     val msg = "Missed safety check-in - no response"
-                    sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
-                        id = UUID.randomUUID().toString(),
-                        hikerName = hikerName,
+                    val alertId = UUID.randomUUID().toString()
+                    val sosAlert = SOSAlert(
+                        alertId = alertId, sessionId = currentSessionId,
+                        hikerId = sessionManager.getUserId(), hikerName = hikerName,
                         trailId = trail?.id ?: "", trailName = trail?.name ?: "",
                         alertType = "CHECKIN_MISSED",
                         latitude = loc.latitude, longitude = loc.longitude,
-                        timestamp = System.currentTimeMillis(),
                         message = msg
-                    ))
+                    )
+                    sosAlertDao.insert(sosAlert.toSosEntity())
+                    // UML: Notification entity persisted
+                    notificationRepository.sendNotification(
+                        Notification(
+                            notificationId = UUID.randomUUID().toString(),
+                            alertId = alertId, recipientId = "officer_1",
+                            message = "MISSED CHECK-IN: $hikerName on ${trail?.name}",
+                            status = "sent"
+                        )
+                    )
                     sosNotificationService.sendSosAlert(
                         hikerName = hikerName, alertType = "CHECKIN_MISSED",
                         latitude = loc.latitude, longitude = loc.longitude, message = msg
@@ -218,6 +265,10 @@ class ActiveHikeViewModel @Inject constructor(
     }
 
     fun acknowledgeCheckIn() {
+        // UML: SafetyCheckIn.responseStatus = "confirmed"
+        currentCheckInId?.let { id ->
+            viewModelScope.launch { safetyCheckInRepository.confirmCheckIn(id) }
+        }
         _uiState.update {
             it.copy(
                 showCheckInDialog = false,
@@ -243,20 +294,31 @@ class ActiveHikeViewModel @Inject constructor(
                 if (!_uiState.value.showFallDetectedDialog) return@launch
             }
             // No response - escalate to SOS
+            // UML State Chart: Hiking -> DangerDetected -> triggerSOS() -> AlertSent
+            hikeSessionRepository.updateStatus(currentSessionId, HikeStatus.Emergency)
             val loc = _uiState.value.currentLocation ?: return@launch
             emergencyService.sendSosToContacts(loc)
             val trail = _uiState.value.trail
             val hikerName = sessionManager.getHikerName()
             val fallMsg = "Fall detected - no response after 30s"
-            sosAlertDao.insert(com.hikingtrailnavigator.app.data.local.entity.SosAlertEntity(
-                id = UUID.randomUUID().toString(),
-                hikerName = hikerName,
+            val alertId = UUID.randomUUID().toString()
+            val sosAlert = SOSAlert(
+                alertId = alertId, sessionId = currentSessionId,
+                hikerId = sessionManager.getUserId(), hikerName = hikerName,
                 trailId = trail?.id ?: "", trailName = trail?.name ?: "",
                 alertType = "FALL_DETECTED",
                 latitude = loc.latitude, longitude = loc.longitude,
-                timestamp = System.currentTimeMillis(),
                 message = fallMsg
-            ))
+            )
+            sosAlertDao.insert(sosAlert.toSosEntity())
+            notificationRepository.sendNotification(
+                Notification(
+                    notificationId = UUID.randomUUID().toString(),
+                    alertId = alertId, recipientId = "officer_1",
+                    message = "FALL DETECTED: $hikerName on ${trail?.name}",
+                    status = "sent"
+                )
+            )
             sosNotificationService.sendSosAlert(
                 hikerName = hikerName, alertType = "FALL_DETECTED",
                 latitude = loc.latitude, longitude = loc.longitude, message = fallMsg
@@ -279,6 +341,18 @@ class ActiveHikeViewModel @Inject constructor(
         val trail = currentState.trail ?: return
 
         if (currentState.isPaused) return
+
+        // UML: Location entity - persist tracked location
+        viewModelScope.launch {
+            hikeSessionRepository.addLocation(
+                com.hikingtrailnavigator.app.domain.model.Location(
+                    id = UUID.randomUUID().toString(),
+                    latitude = lat, longitude = lng,
+                    timestamp = System.currentTimeMillis(),
+                    sessionId = currentSessionId
+                )
+            )
+        }
 
         val newRoute = currentState.route + newPoint
 
@@ -372,7 +446,15 @@ class ActiveHikeViewModel @Inject constructor(
     }
 
     fun togglePause() {
-        _uiState.update { it.copy(isPaused = !it.isPaused) }
+        val newPaused = !_uiState.value.isPaused
+        _uiState.update { it.copy(isPaused = newPaused) }
+        // UML State Chart: update session status
+        viewModelScope.launch {
+            hikeSessionRepository.updateStatus(
+                currentSessionId,
+                if (newPaused) HikeStatus.Paused else HikeStatus.Active
+            )
+        }
     }
 
     fun showCheckIn() {
@@ -395,6 +477,11 @@ class ActiveHikeViewModel @Inject constructor(
         checkInTimerJob?.cancel()
 
         viewModelScope.launch {
+            // UML State Chart: Hiking -> endHike() -> HikeEnded
+            // UML HikeSession.endHike() - update session status
+            hikeSessionRepository.endSession(currentSessionId)
+            sessionManager.clearActiveSession()
+
             val activity = HikeActivity(
                 id = UUID.randomUUID().toString(),
                 trailId = trail.id,

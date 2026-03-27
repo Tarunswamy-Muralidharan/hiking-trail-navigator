@@ -40,6 +40,12 @@ object AppModule {
     @Provides fun provideActiveHikerDao(db: HikerDatabase): ActiveHikerDao = db.activeHikerDao()
     @Provides fun provideRouteWarningDao(db: HikerDatabase): RouteWarningDao = db.routeWarningDao()
     @Provides fun provideSosAlertDao(db: HikerDatabase): SosAlertDao = db.sosAlertDao()
+    // UML DAOs
+    @Provides fun provideUserDao(db: HikerDatabase): UserDao = db.userDao()
+    @Provides fun provideHikeSessionDao(db: HikerDatabase): HikeSessionDao = db.hikeSessionDao()
+    @Provides fun provideLocationDao(db: HikerDatabase): LocationDao = db.locationDao()
+    @Provides fun provideNotificationDao(db: HikerDatabase): NotificationDao = db.notificationDao()
+    @Provides fun provideSafetyCheckInDao(db: HikerDatabase): SafetyCheckInDao = db.safetyCheckInDao()
 
     @Provides
     @Singleton

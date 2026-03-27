@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "HikingTrailNavigator"
 include ':app'
+include ':adminapp'

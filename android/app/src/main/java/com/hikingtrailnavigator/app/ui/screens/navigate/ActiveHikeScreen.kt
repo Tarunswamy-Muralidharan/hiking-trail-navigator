@@ -28,23 +28,30 @@ fun ActiveHikeScreen(
     val uiState by viewModel.uiState.collectAsState()
     val trail = uiState.trail
 
+    // Show loading until trail data is available
+    if (trail == null) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                CircularProgressIndicator(color = Color(0xFF2E7D32))
+                Spacer(Modifier.height(12.dp))
+                Text("Loading trail...", color = Color(0xFF757575))
+            }
+        }
+        return
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
-        // OpenStreetMap with satellite support
-        OsmMapView(
-            modifier = Modifier.fillMaxSize(),
-            centerLat = uiState.currentLocation?.latitude ?: trail?.startPoint?.latitude ?: 11.065,
-            centerLng = uiState.currentLocation?.longitude ?: trail?.startPoint?.longitude ?: 77.093,
-            zoomLevel = 18.0,
-            useSatellite = uiState.useSatellite,
-            showMyLocation = true,
+        // Map follows user's current GPS location
+        key(trail.id) {
+            OsmMapView(
+                modifier = Modifier.fillMaxSize(),
+                centerLat = trail.startPoint.latitude,
+                centerLng = trail.startPoint.longitude,
+                zoomLevel = 16.0,
+                useSatellite = true,
+                showMyLocation = true,
+                followMyLocation = true,
             markers = buildList {
-                // Trail start/end markers
-                trail?.let {
-                    add(MapMarker(position = it.startPoint, title = "Start", snippet = "Trail start point"))
-                    if (it.startPoint != it.endPoint) {
-                        add(MapMarker(position = it.endPoint, title = "End", snippet = "Trail end point"))
-                    }
-                }
                 // Danger zone center markers
                 uiState.allDangerZones.forEach { zone ->
                     add(MapMarker(
@@ -56,16 +63,6 @@ fun ActiveHikeScreen(
                 }
             },
             polylines = buildList {
-                // Safe route in GREEN (trail path)
-                trail?.coordinates?.let { coords ->
-                    if (coords.isNotEmpty()) {
-                        add(MapPolyline(
-                            points = coords,
-                            color = AndroidColor.rgb(46, 125, 50),
-                            width = 8f
-                        ))
-                    }
-                }
                 // User's actual walked path in ORANGE
                 if (uiState.route.isNotEmpty()) {
                     add(MapPolyline(
@@ -88,6 +85,7 @@ fun ActiveHikeScreen(
                 }
             }
         )
+        } // end key(trail.id)
 
         // Stats bar at top (FR-102: distance remaining, ETA, pace)
         Card(
@@ -100,7 +98,7 @@ fun ActiveHikeScreen(
         ) {
             Column(modifier = Modifier.padding(12.dp)) {
                 Text(
-                    text = trail?.name ?: "Hiking...",
+                    text = trail.name,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -195,15 +193,6 @@ fun ActiveHikeScreen(
             colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.9f))
         ) {
             Column(modifier = Modifier.padding(8.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(12.dp, 4.dp).padding(0.dp)) {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawRect(color = Color(0xFF2E7D32))
-                        }
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    Text("Safe route", fontSize = 9.sp, color = Color(0xFF424242))
-                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(modifier = Modifier.size(12.dp, 4.dp).padding(0.dp)) {
                         Canvas(modifier = Modifier.fillMaxSize()) {
