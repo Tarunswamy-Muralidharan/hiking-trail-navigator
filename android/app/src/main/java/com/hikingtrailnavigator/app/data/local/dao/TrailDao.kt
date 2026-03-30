@@ -51,6 +51,9 @@ interface HazardReportDao {
     @Query("SELECT * FROM hazard_reports ORDER BY reportedAt DESC")
     fun getAllHazardReports(): Flow<List<HazardReportEntity>>
 
+    @Query("SELECT * FROM hazard_reports WHERE expiresAt > :now OR expiresAt = 0 ORDER BY reportedAt DESC")
+    fun getActiveHazardReports(now: Long = System.currentTimeMillis()): Flow<List<HazardReportEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(report: HazardReportEntity)
 
@@ -59,6 +62,25 @@ interface HazardReportDao {
 
     @Query("UPDATE hazard_reports SET confirmations = confirmations + 1 WHERE id = :id")
     suspend fun confirmHazard(id: String)
+
+    @Query("UPDATE hazard_reports SET isVerified = 1 WHERE id = :id")
+    suspend fun verifyHazard(id: String)
+
+    @Query("UPDATE hazard_reports SET isVerified = 0 WHERE id = :id")
+    suspend fun rejectHazard(id: String)
+
+    @Query("DELETE FROM hazard_reports WHERE expiresAt > 0 AND expiresAt < :now")
+    suspend fun deleteExpiredReports(now: Long = System.currentTimeMillis())
+}
+
+// FR-210: Low Activity Zone DAO
+@Dao
+interface LowActivityZoneDao {
+    @Query("SELECT * FROM low_activity_zones")
+    fun getAllZones(): Flow<List<LowActivityZoneEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(zones: List<LowActivityZoneEntity>)
 }
 
 @Dao

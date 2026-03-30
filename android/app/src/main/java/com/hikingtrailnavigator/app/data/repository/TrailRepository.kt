@@ -14,6 +14,7 @@ class TrailRepository @Inject constructor(
     private val trailDao: TrailDao,
     private val dangerZoneDao: DangerZoneDao,
     private val noCoverageZoneDao: NoCoverageZoneDao,
+    private val lowActivityZoneDao: LowActivityZoneDao,
     private val api: HikerApi
 ) {
     fun getAllTrails(): Flow<List<Trail>> =
@@ -42,6 +43,12 @@ class TrailRepository @Inject constructor(
 
     suspend fun insertNoCoverageZones(zones: List<NoCoverageZoneEntity>) =
         noCoverageZoneDao.insertAll(zones)
+
+    fun getLowActivityZones(): Flow<List<LowActivityZone>> =
+        lowActivityZoneDao.getAllZones().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun insertLowActivityZones(zones: List<LowActivityZoneEntity>) =
+        lowActivityZoneDao.insertAll(zones)
 }
 
 @Singleton
@@ -50,7 +57,14 @@ class HazardRepository @Inject constructor(
     private val api: HikerApi
 ) {
     fun getAllHazards(): Flow<List<HazardReport>> =
+        hazardReportDao.getActiveHazardReports().map { entities -> entities.map { it.toDomain() } }
+
+    fun getAllHazardsIncludingExpired(): Flow<List<HazardReport>> =
         hazardReportDao.getAllHazardReports().map { entities -> entities.map { it.toDomain() } }
+
+    suspend fun verifyHazard(id: String) = hazardReportDao.verifyHazard(id)
+    suspend fun rejectHazard(id: String) = hazardReportDao.rejectHazard(id)
+    suspend fun deleteExpiredReports() = hazardReportDao.deleteExpiredReports()
 
     suspend fun confirmHazard(id: String) {
         hazardReportDao.confirmHazard(id)

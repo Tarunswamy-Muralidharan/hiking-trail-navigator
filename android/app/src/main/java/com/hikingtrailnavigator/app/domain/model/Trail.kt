@@ -173,7 +173,9 @@ data class HazardReport(
     val longitude: Double,
     val description: String,
     val reportedAt: Long = System.currentTimeMillis(),
-    val confirmations: Int = 0
+    val confirmations: Int = 0,
+    val expiresAt: Long = System.currentTimeMillis() + 7 * 24 * 60 * 60 * 1000L, // 7 days default
+    val isVerified: Boolean = false
 )
 
 data class HikeActivity(
@@ -186,7 +188,8 @@ data class HikeActivity(
     val duration: Long, // millis
     val elevationGain: Int,
     val route: List<LatLng>,
-    val checkIns: Int
+    val checkIns: Int,
+    val userDifficultyRating: Int = 0 // 0=not rated, 1-5 scale
 )
 
 data class EmergencyContact(
@@ -194,6 +197,16 @@ data class EmergencyContact(
     val name: String,
     val phone: String,
     val relation: String
+)
+
+// FR-210: Low activity / unexplored area
+data class LowActivityZone(
+    val id: String,
+    val name: String,
+    val center: LatLng,
+    val radius: Double, // meters
+    val activityLevel: String, // "unexplored", "low", "moderate"
+    val description: String
 )
 
 data class UserPreferences(

@@ -22,9 +22,11 @@ import com.hikingtrailnavigator.app.data.local.entity.*
         HikeSessionEntity::class,
         LocationEntity::class,
         NotificationEntity::class,
-        SafetyCheckInEntity::class
+        SafetyCheckInEntity::class,
+        // FR-210: Low activity zones
+        LowActivityZoneEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -44,4 +46,6 @@ abstract class HikerDatabase : RoomDatabase() {
     abstract fun locationDao(): LocationDao
     abstract fun notificationDao(): NotificationDao
     abstract fun safetyCheckInDao(): SafetyCheckInDao
+    // FR-210
+    abstract fun lowActivityZoneDao(): LowActivityZoneDao
 }

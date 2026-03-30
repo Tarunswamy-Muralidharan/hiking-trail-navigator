@@ -431,6 +431,116 @@ fun AdminDashboardScreen(
                 }
             }
 
+            // FR-212: Hazard Reports Moderation section
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Hazard Reports (Moderation)",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+
+            if (uiState.hazardReports.isEmpty()) {
+                item {
+                    Text("No hazard reports to review", color = OnSurfaceVariant, fontSize = 13.sp)
+                }
+            }
+
+            items(uiState.hazardReports) { report ->
+                val confidenceLevel = when {
+                    report.confirmations >= 3 -> "High"
+                    report.confirmations >= 1 -> "Medium"
+                    else -> "Low"
+                }
+                val confidenceColor = when {
+                    report.confirmations >= 3 -> Primary
+                    report.confirmations >= 1 -> Warning
+                    else -> Danger
+                }
+                val isExpired = report.expiresAt > 0 && report.expiresAt < System.currentTimeMillis()
+                val daysLeft = if (report.expiresAt > 0) {
+                    ((report.expiresAt - System.currentTimeMillis()) / (24 * 60 * 60 * 1000)).toInt()
+                } else -1
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (report.isVerified) Color(0xFFE8F5E9)
+                        else if (isExpired) Color(0xFFEEEEEE)
+                        else MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.ReportProblem, null, tint = Warning, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column {
+                                    Text(report.type, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                                    Text("Severity: ${report.severity}", fontSize = 12.sp, color = OnSurfaceVariant)
+                                }
+                            }
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(
+                                    "Confidence: $confidenceLevel",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = confidenceColor
+                                )
+                                Text(
+                                    "${report.confirmations} confirmation(s)",
+                                    fontSize = 11.sp,
+                                    color = OnSurfaceVariant
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(report.description, fontSize = 12.sp, color = OnSurfaceVariant)
+                        if (daysLeft >= 0) {
+                            Text(
+                                if (isExpired) "EXPIRED" else "Expires in $daysLeft days",
+                                fontSize = 11.sp,
+                                color = if (isExpired) Danger else OnSurfaceVariant,
+                                fontWeight = if (isExpired) FontWeight.Bold else FontWeight.Normal
+                            )
+                        }
+                        if (report.isVerified) {
+                            Text("VERIFIED", fontSize = 11.sp, color = Primary, fontWeight = FontWeight.Bold)
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (!report.isVerified) {
+                                Button(
+                                    onClick = { viewModel.verifyHazard(report.id) },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.weight(1f).height(34.dp)
+                                ) {
+                                    Text("Verify", fontSize = 12.sp)
+                                }
+                            }
+                            OutlinedButton(
+                                onClick = { viewModel.rejectHazard(report.id) },
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier.weight(1f).height(34.dp)
+                            ) {
+                                Text("Reject", fontSize = 12.sp, color = Danger)
+                            }
+                        }
+                    }
+                }
+            }
+
             // Route warnings section
             item {
                 Spacer(Modifier.height(8.dp))

@@ -24,6 +24,9 @@ class DatabaseSeeder @Inject constructor(
         // Seed no-coverage zones
         trailRepository.insertNoCoverageZones(SeedData.noCoverageZones)
 
+        // FR-210: Seed low activity zones
+        trailRepository.insertLowActivityZones(SeedData.lowActivityZones)
+
         // Seed default emergency contacts (only if none exist)
         val contactCount = emergencyContactRepository.getContactCount()
         if (contactCount == 0) {

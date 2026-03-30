@@ -122,6 +122,50 @@ fun LiveTrackingScreen(
                 }
             }
 
+            // FR-204: Configurable sharing interval
+            Spacer(Modifier.height(12.dp))
+            Card(shape = RoundedCornerShape(12.dp)) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Timer, null, tint = Primary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("Update Interval", fontWeight = FontWeight.SemiBold)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "How often to share your location",
+                        fontSize = 13.sp,
+                        color = OnSurfaceVariant
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        uiState.availableIntervals.forEach { interval ->
+                            FilterChip(
+                                selected = uiState.shareIntervalSeconds == interval,
+                                onClick = { viewModel.setShareInterval(interval) },
+                                label = {
+                                    Text(
+                                        if (interval < 60) "${interval}s" else "${interval / 60}m",
+                                        fontSize = 13.sp
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = Primary,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+
             // Location info
             if (uiState.currentLocation != null) {
                 Spacer(Modifier.height(16.dp))

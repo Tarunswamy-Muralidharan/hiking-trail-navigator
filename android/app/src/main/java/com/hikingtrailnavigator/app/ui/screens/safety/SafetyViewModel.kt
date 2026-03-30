@@ -367,7 +367,10 @@ data class LiveTrackingUiState(
     val currentLocation: LatLng? = null,
     val trackingDuration: Long = 0,
     val shareLink: String = "",
-    val isLocationShared: Boolean = false
+    val isLocationShared: Boolean = false,
+    // FR-204: Configurable intervals
+    val shareIntervalSeconds: Int = 15,
+    val availableIntervals: List<Int> = listOf(5, 15, 30, 60)
 )
 
 @HiltViewModel
@@ -378,22 +381,34 @@ class LiveTrackingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LiveTrackingUiState())
     val uiState: StateFlow<LiveTrackingUiState> = _uiState.asStateFlow()
 
+    private var lastShareTime = 0L
+
     fun startTracking() { _uiState.update { it.copy(isTracking = true) } }
     fun stopTracking() { _uiState.update { it.copy(isTracking = false, isLocationShared = false) } }
+
+    // FR-204: Set sharing interval
+    fun setShareInterval(seconds: Int) {
+        _uiState.update { it.copy(shareIntervalSeconds = seconds) }
+    }
 
     fun updateLocation(lat: Double, lng: Double) {
         val location = LatLng(lat, lng)
         _uiState.update { it.copy(currentLocation = location) }
 
         if (_uiState.value.isLocationShared) {
-            viewModelScope.launch {
-                try {
-                    api.sendLocationUpdate(
-                        com.hikingtrailnavigator.app.data.remote.LocationUpdateRequest(
-                            userId = "local_user", latitude = lat, longitude = lng
+            val now = System.currentTimeMillis()
+            val intervalMs = _uiState.value.shareIntervalSeconds * 1000L
+            if (now - lastShareTime >= intervalMs) {
+                lastShareTime = now
+                viewModelScope.launch {
+                    try {
+                        api.sendLocationUpdate(
+                            com.hikingtrailnavigator.app.data.remote.LocationUpdateRequest(
+                                userId = "local_user", latitude = lat, longitude = lng
+                            )
                         )
-                    )
-                } catch (_: Exception) {}
+                    } catch (_: Exception) {}
+                }
             }
         }
     }

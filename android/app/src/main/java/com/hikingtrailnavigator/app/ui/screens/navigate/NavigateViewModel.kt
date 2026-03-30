@@ -87,7 +87,23 @@ data class ActiveHikeUiState(
     // Satellite toggle
     val useSatellite: Boolean = true,
     // Offline map status
-    val offlineMapStatus: String = ""
+    val offlineMapStatus: String = "",
+    // FR-102: Turn-by-turn navigation
+    val nextWaypointIndex: Int = 0,
+    val distanceToNextWaypoint: Double = 0.0, // meters
+    val bearingToNextWaypoint: String = "", // e.g. "NW", "SE"
+    // FR-105: Post-hike difficulty feedback
+    val showDifficultyRating: Boolean = false,
+    val userDifficultyRating: Int = 0,
+    // FR-210: Low activity zones
+    val allLowActivityZones: List<LowActivityZone> = emptyList(),
+    val insideLowActivityZone: LowActivityZone? = null,
+    val showLowActivityAlert: Boolean = false,
+    // FR-211: Layer toggle states
+    val showDangerZoneLayer: Boolean = true,
+    val showNoCoverageLayer: Boolean = true,
+    val showLowActivityLayer: Boolean = true,
+    val showLayerPanel: Boolean = false
 )
 
 @HiltViewModel
@@ -118,6 +134,7 @@ class ActiveHikeViewModel @Inject constructor(
     private var checkInIntervalMs = 60 * 60 * 1000L // 1 hour default
     private var dangerZones: List<DangerZone> = emptyList()
     private var noCoverageZones: List<NoCoverageZone> = emptyList()
+    private var lowActivityZones: List<LowActivityZone> = emptyList()
     // UML HikeSession tracking
     private var currentSessionId: String = UUID.randomUUID().toString()
 
@@ -144,7 +161,7 @@ class ActiveHikeViewModel @Inject constructor(
             sessionManager.saveActiveSessionId(currentSessionId)
         }
 
-        // Load danger zones and no-coverage zones for proactive alerts
+        // Load danger zones, no-coverage zones, and low-activity zones for proactive alerts
         viewModelScope.launch {
             trailRepository.getDangerZones().collect { zones ->
                 dangerZones = zones
@@ -154,6 +171,13 @@ class ActiveHikeViewModel @Inject constructor(
         viewModelScope.launch {
             trailRepository.getNoCoverageZones().collect { zones ->
                 noCoverageZones = zones
+            }
+        }
+        // FR-210: Load low activity zones
+        viewModelScope.launch {
+            trailRepository.getLowActivityZones().collect { zones ->
+                lowActivityZones = zones
+                _uiState.update { it.copy(allLowActivityZones = zones) }
             }
         }
 
@@ -406,11 +430,38 @@ class ActiveHikeViewModel @Inject constructor(
         }
         val enteredNewDangerZone = currentDangerZone != null && currentState.insideDangerZone?.id != currentDangerZone.id
 
+        // FR-208: Vibrate on entering danger zone
+        if (enteredNewDangerZone) {
+            emergencyService.triggerSOSVibration()
+        }
+
         // Check no-coverage zones (FR-209) - proactive alert
         val inNoCoverage = noCoverageZones.any { zone ->
             geofencingService.isInsideZone(newPoint, zone.center, zone.radius)
         }
         val enteredNoCoverage = inNoCoverage && !currentState.insideNoCoverageZone
+
+        // FR-210: Check low activity zones
+        val currentLowActivityZone = lowActivityZones.firstOrNull { zone ->
+            geofencingService.isInsideZone(newPoint, zone.center, zone.radius)
+        }
+        val enteredLowActivityZone = currentLowActivityZone != null && currentState.insideLowActivityZone?.id != currentLowActivityZone.id
+
+        // FR-102: Turn-by-turn - find nearest upcoming waypoint
+        val coords = trail.coordinates
+        var nextIdx = currentState.nextWaypointIndex
+        if (nextIdx < coords.size) {
+            val distToNext = geofencingService.haversineMeters(newPoint, coords[nextIdx])
+            if (distToNext < 30 && nextIdx < coords.size - 1) {
+                nextIdx++ // Move to next waypoint when within 30m
+            }
+        }
+        val distToWaypoint = if (nextIdx < coords.size) {
+            geofencingService.haversineMeters(newPoint, coords[nextIdx])
+        } else 0.0
+        val bearingStr = if (nextIdx < coords.size) {
+            getBearingDirection(newPoint, coords[nextIdx])
+        } else "Arrived"
 
         _uiState.update {
             it.copy(
@@ -428,7 +479,14 @@ class ActiveHikeViewModel @Inject constructor(
                 insideDangerZone = currentDangerZone,
                 showDangerZoneAlert = enteredNewDangerZone || it.showDangerZoneAlert,
                 insideNoCoverageZone = inNoCoverage,
-                showNoCoverageAlert = enteredNoCoverage || it.showNoCoverageAlert
+                showNoCoverageAlert = enteredNoCoverage || it.showNoCoverageAlert,
+                // FR-102: Turn-by-turn
+                nextWaypointIndex = nextIdx,
+                distanceToNextWaypoint = distToWaypoint,
+                bearingToNextWaypoint = bearingStr,
+                // FR-210: Low activity zone
+                insideLowActivityZone = currentLowActivityZone,
+                showLowActivityAlert = enteredLowActivityZone || it.showLowActivityAlert
             )
         }
     }
@@ -441,8 +499,38 @@ class ActiveHikeViewModel @Inject constructor(
         _uiState.update { it.copy(showNoCoverageAlert = false) }
     }
 
+    // FR-210: Dismiss low activity zone alert
+    fun dismissLowActivityAlert() {
+        _uiState.update { it.copy(showLowActivityAlert = false) }
+    }
+
     fun toggleSatellite() {
         _uiState.update { it.copy(useSatellite = !it.useSatellite) }
+    }
+
+    // FR-211: Layer toggle controls
+    fun toggleLayerPanel() {
+        _uiState.update { it.copy(showLayerPanel = !it.showLayerPanel) }
+    }
+    fun toggleDangerZoneLayer() {
+        _uiState.update { it.copy(showDangerZoneLayer = !it.showDangerZoneLayer) }
+    }
+    fun toggleNoCoverageLayer() {
+        _uiState.update { it.copy(showNoCoverageLayer = !it.showNoCoverageLayer) }
+    }
+    fun toggleLowActivityLayer() {
+        _uiState.update { it.copy(showLowActivityLayer = !it.showLowActivityLayer) }
+    }
+
+    // FR-105: Post-hike difficulty rating
+    fun showDifficultyRating() {
+        _uiState.update { it.copy(showDifficultyRating = true) }
+    }
+    fun setDifficultyRating(rating: Int) {
+        _uiState.update { it.copy(userDifficultyRating = rating) }
+    }
+    fun dismissDifficultyRating() {
+        _uiState.update { it.copy(showDifficultyRating = false) }
     }
 
     fun togglePause() {
@@ -470,15 +558,22 @@ class ActiveHikeViewModel @Inject constructor(
     }
 
     fun endHike(onComplete: () -> Unit) {
+        // Show difficulty rating dialog first
+        _uiState.update { it.copy(showEndDialog = false, showDifficultyRating = true) }
+        pendingOnComplete = onComplete
+    }
+
+    private var pendingOnComplete: (() -> Unit)? = null
+
+    fun submitRatingAndEndHike() {
         val state = _uiState.value
         val trail = state.trail ?: return
+        val onComplete = pendingOnComplete ?: return
 
         fallDetectionService.stopMonitoring()
         checkInTimerJob?.cancel()
 
         viewModelScope.launch {
-            // UML State Chart: Hiking -> endHike() -> HikeEnded
-            // UML HikeSession.endHike() - update session status
             hikeSessionRepository.endSession(currentSessionId)
             sessionManager.clearActiveSession()
 
@@ -492,9 +587,11 @@ class ActiveHikeViewModel @Inject constructor(
                 duration = state.elapsedTime,
                 elevationGain = state.elevationGained,
                 route = state.route,
-                checkIns = state.checkInsCompleted
+                checkIns = state.checkInsCompleted,
+                userDifficultyRating = state.userDifficultyRating
             )
             activityRepository.saveActivity(activity)
+            _uiState.update { it.copy(showDifficultyRating = false) }
             onComplete()
         }
     }
@@ -504,6 +601,26 @@ class ActiveHikeViewModel @Inject constructor(
         fallDetectionService.stopMonitoring()
         checkInTimerJob?.cancel()
         fallCountdownJob?.cancel()
+    }
+
+    // FR-102: Calculate compass bearing direction between two points
+    private fun getBearingDirection(from: LatLng, to: LatLng): String {
+        val lat1 = Math.toRadians(from.latitude)
+        val lat2 = Math.toRadians(to.latitude)
+        val dLng = Math.toRadians(to.longitude - from.longitude)
+        val y = Math.sin(dLng) * Math.cos(lat2)
+        val x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng)
+        val bearing = (Math.toDegrees(Math.atan2(y, x)) + 360) % 360
+        return when {
+            bearing < 22.5 || bearing >= 337.5 -> "N"
+            bearing < 67.5 -> "NE"
+            bearing < 112.5 -> "E"
+            bearing < 157.5 -> "SE"
+            bearing < 202.5 -> "S"
+            bearing < 247.5 -> "SW"
+            bearing < 292.5 -> "W"
+            else -> "NW"
+        }
     }
 
     private fun calculateHaversine(p1: LatLng, p2: LatLng): Double {

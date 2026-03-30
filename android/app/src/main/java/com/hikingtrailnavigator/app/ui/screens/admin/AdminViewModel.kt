@@ -26,7 +26,9 @@ data class AdminUiState(
     val activeHikers: List<ActiveHikerSessionEntity> = emptyList(),
     val routeWarnings: List<RouteWarningEntity> = emptyList(),
     val trails: List<TrailEntity> = emptyList(),
-    val sosAlerts: List<SosAlertEntity> = emptyList()
+    val sosAlerts: List<SosAlertEntity> = emptyList(),
+    // FR-212: Hazard reports for admin moderation
+    val hazardReports: List<com.hikingtrailnavigator.app.data.local.entity.HazardReportEntity> = emptyList()
 )
 
 data class AddTrailState(
@@ -50,7 +52,8 @@ class AdminViewModel @Inject constructor(
     private val activeHikerDao: ActiveHikerDao,
     private val routeWarningDao: RouteWarningDao,
     private val trailDao: TrailDao,
-    private val sosAlertDao: SosAlertDao
+    private val sosAlertDao: SosAlertDao,
+    private val hazardReportDao: com.hikingtrailnavigator.app.data.local.dao.HazardReportDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(AdminUiState())
@@ -80,6 +83,16 @@ class AdminViewModel @Inject constructor(
                 _uiState.update { it.copy(sosAlerts = alerts) }
             }
         }
+        // FR-212: Load hazard reports for moderation
+        viewModelScope.launch {
+            hazardReportDao.getAllHazardReports().collect { reports ->
+                _uiState.update { it.copy(hazardReports = reports) }
+            }
+        }
+        // FR-212: Clean up expired reports on load
+        viewModelScope.launch {
+            hazardReportDao.deleteExpiredReports()
+        }
     }
 
     fun updateUsername(value: String) { _uiState.update { it.copy(username = value) } }
@@ -102,6 +115,16 @@ class AdminViewModel @Inject constructor(
         viewModelScope.launch {
             routeWarningDao.deactivate(id)
         }
+    }
+
+    // FR-212: Admin hazard moderation
+    fun verifyHazard(id: String) {
+        viewModelScope.launch { hazardReportDao.verifyHazard(id) }
+    }
+    fun rejectHazard(id: String) {
+        viewModelScope.launch { hazardReportDao.delete(
+            _uiState.value.hazardReports.find { it.id == id } ?: return@launch
+        ) }
     }
 
     // Add Trail form updates

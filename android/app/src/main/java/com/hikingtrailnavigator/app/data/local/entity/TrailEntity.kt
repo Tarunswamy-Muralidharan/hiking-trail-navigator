@@ -65,7 +65,9 @@ data class HazardReportEntity(
     val longitude: Double,
     val description: String,
     val reportedAt: Long,
-    val confirmations: Int
+    val confirmations: Int,
+    val expiresAt: Long = 0L,
+    val isVerified: Boolean = false
 )
 
 @Entity(tableName = "hike_activities")
@@ -80,7 +82,20 @@ data class HikeActivityEntity(
     val duration: Long,
     val elevationGain: Int,
     val route: String, // JSON
-    val checkIns: Int
+    val checkIns: Int,
+    val userDifficultyRating: Int = 0
+)
+
+// FR-210: Low activity / unexplored area zones
+@Entity(tableName = "low_activity_zones")
+data class LowActivityZoneEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val centerLat: Double,
+    val centerLng: Double,
+    val radius: Double,
+    val activityLevel: String, // "unexplored", "low", "moderate"
+    val description: String
 )
 
 @Entity(tableName = "emergency_contacts")
@@ -274,13 +289,20 @@ fun NoCoverageZoneEntity.toDomain() = NoCoverageZone(
 fun HazardReportEntity.toDomain() = HazardReport(
     id = id, type = type, severity = severity,
     latitude = latitude, longitude = longitude,
-    description = description, reportedAt = reportedAt, confirmations = confirmations
+    description = description, reportedAt = reportedAt, confirmations = confirmations,
+    expiresAt = expiresAt, isVerified = isVerified
 )
 
 fun HazardReport.toEntity() = HazardReportEntity(
     id = id, type = type, severity = severity,
     latitude = latitude, longitude = longitude,
-    description = description, reportedAt = reportedAt, confirmations = confirmations
+    description = description, reportedAt = reportedAt, confirmations = confirmations,
+    expiresAt = expiresAt, isVerified = isVerified
+)
+
+fun LowActivityZoneEntity.toDomain() = LowActivityZone(
+    id = id, name = name, center = LatLng(centerLat, centerLng),
+    radius = radius, activityLevel = activityLevel, description = description
 )
 
 fun HikeActivityEntity.toDomain(): HikeActivity {
@@ -290,7 +312,8 @@ fun HikeActivityEntity.toDomain(): HikeActivity {
         id = id, trailId = trailId, trailName = trailName,
         startTime = startTime, endTime = endTime, distance = distance,
         duration = duration, elevationGain = elevationGain,
-        route = gson.fromJson(route, routeType), checkIns = checkIns
+        route = gson.fromJson(route, routeType), checkIns = checkIns,
+        userDifficultyRating = userDifficultyRating
     )
 }
 
@@ -300,7 +323,8 @@ fun HikeActivity.toEntity(): HikeActivityEntity {
         id = id, trailId = trailId, trailName = trailName,
         startTime = startTime, endTime = endTime, distance = distance,
         duration = duration, elevationGain = elevationGain,
-        route = gson.toJson(route), checkIns = checkIns
+        route = gson.toJson(route), checkIns = checkIns,
+        userDifficultyRating = userDifficultyRating
     )
 }
 

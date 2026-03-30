@@ -2,6 +2,7 @@ package com.hikingtrailnavigator.app.data.local
 
 import com.hikingtrailnavigator.app.data.local.entity.DangerZoneEntity
 import com.hikingtrailnavigator.app.data.local.entity.EmergencyContactEntity
+import com.hikingtrailnavigator.app.data.local.entity.LowActivityZoneEntity
 import com.hikingtrailnavigator.app.data.local.entity.NoCoverageZoneEntity
 import com.hikingtrailnavigator.app.domain.model.*
 import com.google.gson.Gson
@@ -465,6 +466,40 @@ object SeedData {
             id = "nc_4", name = "Grass Hills Interior",
             centerLat = 10.3350, centerLng = 76.8630, radius = 5000.0,
             description = "Zero connectivity in Anamalai grasslands. Carry emergency whistle and flares."
+        )
+    )
+
+    // FR-210: Low activity / unexplored zones
+    val lowActivityZones = listOf(
+        LowActivityZoneEntity(
+            id = "la_1", name = "Unexplored Anaikatti Ridge",
+            centerLat = 11.0800, centerLng = 76.7200, radius = 2000.0,
+            activityLevel = "unexplored",
+            description = "Uncharted ridge with no recorded hikes. Exercise extreme caution."
+        ),
+        LowActivityZoneEntity(
+            id = "la_2", name = "Low-Traffic Siruvani Interior",
+            centerLat = 10.9200, centerLng = 76.6300, radius = 2500.0,
+            activityLevel = "low",
+            description = "Very few hikers visit this area. Limited trail markings."
+        ),
+        LowActivityZoneEntity(
+            id = "la_3", name = "Unexplored Parambikulam Buffer",
+            centerLat = 10.4500, centerLng = 76.8400, radius = 3000.0,
+            activityLevel = "unexplored",
+            description = "Buffer zone with no established trails. Dense forest cover."
+        ),
+        LowActivityZoneEntity(
+            id = "la_4", name = "Low-Activity Kovaipudur Hills",
+            centerLat = 10.9500, centerLng = 76.9100, radius = 1500.0,
+            activityLevel = "low",
+            description = "Occasional hikers. Trails may be overgrown. Inform someone before entering."
+        ),
+        LowActivityZoneEntity(
+            id = "la_5", name = "Unexplored Valparai Corridor",
+            centerLat = 10.3800, centerLng = 76.9200, radius = 3500.0,
+            activityLevel = "unexplored",
+            description = "Remote corridor between Valparai estates. No established paths."
         )
     )
 

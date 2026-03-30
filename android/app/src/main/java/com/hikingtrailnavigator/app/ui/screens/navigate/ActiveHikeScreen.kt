@@ -52,14 +52,27 @@ fun ActiveHikeScreen(
                 showMyLocation = true,
                 followMyLocation = true,
             markers = buildList {
-                // Danger zone center markers
-                uiState.allDangerZones.forEach { zone ->
-                    add(MapMarker(
-                        position = zone.center,
-                        title = zone.name,
-                        snippet = "${zone.severity} - ${zone.description}",
-                        color = AndroidColor.rgb(211, 47, 47)
-                    ))
+                // Danger zone center markers (FR-211: toggle)
+                if (uiState.showDangerZoneLayer) {
+                    uiState.allDangerZones.forEach { zone ->
+                        add(MapMarker(
+                            position = zone.center,
+                            title = zone.name,
+                            snippet = "${zone.severity} - ${zone.description}",
+                            color = AndroidColor.rgb(211, 47, 47)
+                        ))
+                    }
+                }
+                // FR-210: Low activity zone markers (FR-211: toggle)
+                if (uiState.showLowActivityLayer) {
+                    uiState.allLowActivityZones.forEach { zone ->
+                        add(MapMarker(
+                            position = zone.center,
+                            title = zone.name,
+                            snippet = "${zone.activityLevel} - ${zone.description}",
+                            color = AndroidColor.rgb(158, 158, 158)
+                        ))
+                    }
                 }
             },
             polylines = buildList {
@@ -73,15 +86,30 @@ fun ActiveHikeScreen(
                 }
             },
             circles = buildList {
-                // All danger zones as red circles
-                uiState.allDangerZones.forEach { zone ->
-                    add(MapCircle(
-                        center = zone.center,
-                        radiusMeters = zone.radius,
-                        fillColor = AndroidColor.argb(60, 211, 47, 47),
-                        strokeColor = AndroidColor.rgb(211, 47, 47),
-                        strokeWidth = 2.5f
-                    ))
+                // All danger zones as red circles (FR-211: toggle)
+                if (uiState.showDangerZoneLayer) {
+                    uiState.allDangerZones.forEach { zone ->
+                        add(MapCircle(
+                            center = zone.center,
+                            radiusMeters = zone.radius,
+                            fillColor = AndroidColor.argb(60, 211, 47, 47),
+                            strokeColor = AndroidColor.rgb(211, 47, 47),
+                            strokeWidth = 2.5f
+                        ))
+                    }
+                }
+                // FR-210: Low activity zones as gray circles (FR-211: toggle)
+                if (uiState.showLowActivityLayer) {
+                    uiState.allLowActivityZones.forEach { zone ->
+                        val alpha = if (zone.activityLevel == "unexplored") 50 else 35
+                        add(MapCircle(
+                            center = zone.center,
+                            radiusMeters = zone.radius,
+                            fillColor = AndroidColor.argb(alpha, 158, 158, 158),
+                            strokeColor = AndroidColor.rgb(117, 117, 117),
+                            strokeWidth = 2f
+                        ))
+                    }
                 }
             }
         )
@@ -120,8 +148,45 @@ fun ActiveHikeScreen(
                     HikeStat("ETA", uiState.estimatedTimeRemaining)
                     HikeStat("Pace", uiState.avgPace)
                 }
+
+                // FR-102: Turn-by-turn navigation guidance
+                if (uiState.bearingToNextWaypoint.isNotEmpty() && uiState.bearingToNextWaypoint != "Arrived") {
+                    Spacer(Modifier.height(6.dp))
+                    Divider(color = Color(0xFFE0E0E0))
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Navigation, null, tint = Primary, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            "Head ${uiState.bearingToNextWaypoint} — ${uiState.distanceToNextWaypoint.toInt()}m to next waypoint",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Primary
+                        )
+                    }
+                } else if (uiState.bearingToNextWaypoint == "Arrived") {
+                    Spacer(Modifier.height(6.dp))
+                    Divider(color = Color(0xFFE0E0E0))
+                    Spacer(Modifier.height(4.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.Flag, null, tint = Primary, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Trail end reached!", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Primary)
+                    }
+                }
             }
         }
+
+        // Warning cards stacked below stats
+        var warningOffset = 0
 
         // Deviation warning (FR-205)
         if (uiState.isDeviating) {
@@ -129,7 +194,7 @@ fun ActiveHikeScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .padding(top = 170.dp)
+                    .padding(top = (185 + warningOffset).dp)
                     .align(Alignment.TopCenter),
                 colors = CardDefaults.cardColors(containerColor = DangerLight)
             ) {
@@ -146,14 +211,15 @@ fun ActiveHikeScreen(
                     )
                 }
             }
+            warningOffset += 50
         }
 
         // No-coverage zone indicator
-        if (uiState.insideNoCoverageZone) {
+        if (uiState.insideNoCoverageZone && uiState.showNoCoverageLayer) {
             Card(
                 modifier = Modifier
                     .padding(horizontal = 16.dp)
-                    .padding(top = if (uiState.isDeviating) 220.dp else 170.dp)
+                    .padding(top = (185 + warningOffset).dp)
                     .align(Alignment.TopCenter),
                 colors = CardDefaults.cardColors(containerColor = WarningLight)
             ) {
@@ -163,9 +229,32 @@ fun ActiveHikeScreen(
                     Text("No network coverage", fontSize = 13.sp, color = Warning)
                 }
             }
+            warningOffset += 40
         }
 
-        // Map controls (satellite toggle)
+        // FR-210: Low activity zone indicator
+        if (uiState.insideLowActivityZone != null && uiState.showLowActivityLayer) {
+            Card(
+                modifier = Modifier
+                    .padding(horizontal = 16.dp)
+                    .padding(top = (185 + warningOffset).dp)
+                    .align(Alignment.TopCenter),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEEEEEE))
+            ) {
+                Row(modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.Explore, null, tint = Color(0xFF616161), modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        if (uiState.insideLowActivityZone!!.activityLevel == "unexplored")
+                            "Unexplored area — exercise extreme caution"
+                        else "Low-activity area — limited trail data",
+                        fontSize = 13.sp, color = Color(0xFF616161)
+                    )
+                }
+            }
+        }
+
+        // Map controls (satellite toggle + FR-211: layer toggle)
         Column(
             modifier = Modifier
                 .align(Alignment.CenterEnd)
@@ -181,6 +270,40 @@ fun ActiveHikeScreen(
                     if (uiState.useSatellite) Icons.Default.Map else Icons.Default.Satellite,
                     contentDescription = "Toggle map type"
                 )
+            }
+            // FR-211: Layer toggle button
+            SmallFloatingActionButton(
+                onClick = { viewModel.toggleLayerPanel() },
+                containerColor = Color.White,
+                contentColor = Color(0xFF424242)
+            ) {
+                Icon(Icons.Default.Layers, contentDescription = "Toggle layers")
+            }
+        }
+
+        // FR-211: Layer toggle panel
+        if (uiState.showLayerPanel) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 56.dp)
+                    .width(200.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f))
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Map Layers", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(Modifier.height(8.dp))
+                    LayerToggle("Danger Zones", uiState.showDangerZoneLayer, Color(0xFFD32F2F)) {
+                        viewModel.toggleDangerZoneLayer()
+                    }
+                    LayerToggle("No Coverage", uiState.showNoCoverageLayer, Warning) {
+                        viewModel.toggleNoCoverageLayer()
+                    }
+                    LayerToggle("Low Activity", uiState.showLowActivityLayer, Color(0xFF757575)) {
+                        viewModel.toggleLowActivityLayer()
+                    }
+                }
             }
         }
 
@@ -202,14 +325,27 @@ fun ActiveHikeScreen(
                     Spacer(Modifier.width(4.dp))
                     Text("Your path", fontSize = 9.sp, color = Color(0xFF424242))
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(modifier = Modifier.size(8.dp).padding(0.dp)) {
-                        Canvas(modifier = Modifier.fillMaxSize()) {
-                            drawCircle(color = Color(0xFFD32F2F))
+                if (uiState.showDangerZoneLayer) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(8.dp).padding(0.dp)) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                drawCircle(color = Color(0xFFD32F2F))
+                            }
                         }
+                        Spacer(Modifier.width(4.dp))
+                        Text("Danger zone", fontSize = 9.sp, color = Color(0xFF424242))
                     }
-                    Spacer(Modifier.width(4.dp))
-                    Text("Danger zone", fontSize = 9.sp, color = Color(0xFF424242))
+                }
+                if (uiState.showLowActivityLayer) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(modifier = Modifier.size(8.dp).padding(0.dp)) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                drawCircle(color = Color(0xFF9E9E9E))
+                            }
+                        }
+                        Spacer(Modifier.width(4.dp))
+                        Text("Low activity", fontSize = 9.sp, color = Color(0xFF424242))
+                    }
                 }
             }
         }
@@ -376,6 +512,38 @@ fun ActiveHikeScreen(
             )
         }
 
+        // FR-210: Low Activity Zone Alert
+        if (uiState.showLowActivityAlert && uiState.insideLowActivityZone != null) {
+            val zone = uiState.insideLowActivityZone!!
+            AlertDialog(
+                onDismissRequest = viewModel::dismissLowActivityAlert,
+                icon = { Icon(Icons.Default.Explore, null, tint = Color(0xFF616161), modifier = Modifier.size(40.dp)) },
+                title = {
+                    Text(
+                        if (zone.activityLevel == "unexplored") "Unexplored Area"
+                        else "Low-Activity Area"
+                    )
+                },
+                text = {
+                    Column {
+                        Text(zone.name, fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.height(8.dp))
+                        Text(zone.description, fontSize = 14.sp, color = OnSurfaceVariant)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            "Recommended: Stay vigilant, inform contacts, and enable enhanced safety monitoring.",
+                            fontSize = 13.sp, color = Warning, fontWeight = FontWeight.Medium
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(onClick = viewModel::dismissLowActivityAlert) {
+                        Text("Understood")
+                    }
+                }
+            )
+        }
+
         // End hike confirmation
         if (uiState.showEndDialog) {
             AlertDialog(
@@ -407,6 +575,88 @@ fun ActiveHikeScreen(
                 }
             )
         }
+
+        // FR-105: Post-hike difficulty feedback dialog
+        if (uiState.showDifficultyRating) {
+            AlertDialog(
+                onDismissRequest = {},
+                title = { Text("Rate Trail Difficulty") },
+                text = {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "How difficult did you find this trail?",
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            for (i in 1..5) {
+                                IconButton(onClick = { viewModel.setDifficultyRating(i) }) {
+                                    Icon(
+                                        if (i <= uiState.userDifficultyRating) Icons.Default.Star
+                                        else Icons.Default.StarBorder,
+                                        contentDescription = "Rate $i",
+                                        tint = if (i <= uiState.userDifficultyRating) Warning else OnSurfaceVariant,
+                                        modifier = Modifier.size(36.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            when (uiState.userDifficultyRating) {
+                                1 -> "Very Easy"
+                                2 -> "Easy"
+                                3 -> "Moderate"
+                                4 -> "Hard"
+                                5 -> "Very Hard"
+                                else -> "Tap to rate"
+                            },
+                            fontSize = 14.sp,
+                            color = OnSurfaceVariant,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = viewModel::submitRatingAndEndHike,
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) {
+                        Text("Submit & End")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = viewModel::submitRatingAndEndHike) {
+                        Text("Skip")
+                    }
+                }
+            )
+        }
+    }
+}
+
+// FR-211: Layer toggle row component
+@Composable
+private fun LayerToggle(label: String, enabled: Boolean, color: Color, onToggle: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(modifier = Modifier.size(8.dp)) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                drawCircle(color = color)
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(label, fontSize = 13.sp, modifier = Modifier.weight(1f))
+        Switch(
+            checked = enabled,
+            onCheckedChange = { onToggle() },
+            modifier = Modifier.height(24.dp)
+        )
     }
 }
 
