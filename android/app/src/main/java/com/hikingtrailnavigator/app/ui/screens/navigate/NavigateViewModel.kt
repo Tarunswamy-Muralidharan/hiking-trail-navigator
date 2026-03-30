@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.hikingtrailnavigator.app.data.local.entity.toSosEntity
 import com.hikingtrailnavigator.app.data.repository.*
 import com.hikingtrailnavigator.app.domain.model.*
+import com.hikingtrailnavigator.app.service.ConnectivityService
 import com.hikingtrailnavigator.app.service.EmergencyService
 import com.hikingtrailnavigator.app.service.FallDetectionService
 import com.hikingtrailnavigator.app.service.GeofencingService
@@ -103,7 +104,9 @@ data class ActiveHikeUiState(
     val showDangerZoneLayer: Boolean = true,
     val showNoCoverageLayer: Boolean = true,
     val showLowActivityLayer: Boolean = true,
-    val showLayerPanel: Boolean = false
+    val showLayerPanel: Boolean = false,
+    // Real-time device connectivity (separate from zone-based no-coverage)
+    val isDeviceOffline: Boolean = false
 )
 
 @HiltViewModel
@@ -119,7 +122,8 @@ class ActiveHikeViewModel @Inject constructor(
     private val sosNotificationService: com.hikingtrailnavigator.app.service.SosNotificationService,
     private val hikeSessionRepository: HikeSessionRepository,
     private val safetyCheckInRepository: SafetyCheckInRepository,
-    private val notificationRepository: NotificationRepository
+    private val notificationRepository: NotificationRepository,
+    private val connectivityService: ConnectivityService
 ) : ViewModel() {
 
     private val trailId: String = savedStateHandle["trailId"] ?: ""
@@ -188,6 +192,13 @@ class ActiveHikeViewModel @Inject constructor(
                 if (detected && !_uiState.value.showFallDetectedDialog) {
                     onFallDetected()
                 }
+            }
+        }
+
+        // Observe real-time device connectivity (FR-209: offline warning during hike)
+        viewModelScope.launch {
+            connectivityService.isOnline.collect { online ->
+                _uiState.update { it.copy(isDeviceOffline = !online) }
             }
         }
 

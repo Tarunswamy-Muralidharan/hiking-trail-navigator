@@ -80,6 +80,17 @@ fun AdminApp(viewModel: AdminViewModel = viewModel()) {
                     icon = { Icon(Icons.Default.Terrain, null) },
                     label = { Text("Trails") }
                 )
+                NavigationBarItem(
+                    selected = uiState.currentTab == 4,
+                    onClick = { viewModel.setTab(4) },
+                    icon = {
+                        BadgedBox(badge = {
+                            val unverified = uiState.hazardReports.count { !it.isVerified }
+                            if (unverified > 0) Badge { Text("$unverified") }
+                        }) { Icon(Icons.Default.ReportProblem, null) }
+                    },
+                    label = { Text("Hazards") }
+                )
             }
         }
     ) { padding ->
@@ -96,6 +107,7 @@ fun AdminApp(viewModel: AdminViewModel = viewModel()) {
                     1 -> SosAlertsTab(uiState, viewModel)
                     2 -> HikersTab(uiState)
                     3 -> TrailsTab(uiState, viewModel)
+                    4 -> HazardsTab(uiState, viewModel)
                 }
             }
         }
@@ -376,6 +388,146 @@ fun TrailsTab(state: AdminUiState, viewModel: AdminViewModel) {
                 TextButton(onClick = { deleteDialog = null }) { Text("Cancel") }
             }
         )
+    }
+}
+
+// ═══════════════════════════════════════
+// Hazards Tab
+// ═══════════════════════════════════════
+@Composable
+fun HazardsTab(state: AdminUiState, viewModel: AdminViewModel) {
+    val unverified = state.hazardReports.filter { !it.isVerified }
+    val verified = state.hazardReports.filter { it.isVerified }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        item {
+            Text(
+                "Unverified Reports (${unverified.size})",
+                fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Warning
+            )
+        }
+
+        if (unverified.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, null, tint = Primary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("All reports verified", color = Primary, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        }
+
+        items(unverified) { report ->
+            HazardReportCard(
+                report = report,
+                onVerify = { viewModel.verifyHazard(report.id) },
+                onReject = { viewModel.rejectHazard(report.id) }
+            )
+        }
+
+        if (verified.isNotEmpty()) {
+            item {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Verified (${verified.size})",
+                    fontWeight = FontWeight.Bold, fontSize = 16.sp, color = OnSurfaceVariant
+                )
+            }
+
+            items(verified) { report ->
+                HazardReportCard(report = report, onVerify = null, onReject = null)
+            }
+        }
+    }
+}
+
+@Composable
+fun HazardReportCard(
+    report: HazardReport,
+    onVerify: (() -> Unit)?,
+    onReject: (() -> Unit)?
+) {
+    val timeSince = (System.currentTimeMillis() - report.reportedAt) / 60000
+    val timeStr = when {
+        timeSince < 1 -> "Just now"
+        timeSince < 60 -> "${timeSince}m ago"
+        timeSince < 1440 -> "${timeSince / 60}h ago"
+        else -> "${timeSince / 1440}d ago"
+    }
+
+    val severityColor = when (report.severity) {
+        "Critical" -> Danger
+        "High" -> Color(0xFFE65100)
+        "Medium" -> Warning
+        "Low" -> Primary
+        else -> OnSurfaceVariant
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (report.isVerified) Color(0xFFE8F5E9)
+            else severityColor.copy(alpha = 0.08f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.ReportProblem, null, tint = severityColor, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(report.type, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = severityColor)
+                        Text(report.severity, fontSize = 12.sp, color = severityColor)
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(timeStr, fontSize = 12.sp, color = severityColor, fontWeight = FontWeight.Medium)
+                    if (report.isVerified) {
+                        Text("VERIFIED", fontSize = 10.sp, color = Primary, fontWeight = FontWeight.Bold)
+                    }
+                    Text("${report.confirmations} confirm(s)", fontSize = 10.sp, color = OnSurfaceVariant)
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            Text(report.description, fontSize = 13.sp, color = OnSurfaceVariant)
+            Text(
+                "GPS: ${String.format("%.5f", report.latitude)}, ${String.format("%.5f", report.longitude)}",
+                fontSize = 12.sp, color = OnSurfaceVariant
+            )
+
+            if (onVerify != null && onReject != null && !report.isVerified) {
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = onVerify,
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f).height(36.dp)
+                    ) { Text("Verify", fontSize = 13.sp) }
+                    OutlinedButton(
+                        onClick = onReject,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f).height(36.dp)
+                    ) { Text("Reject", fontSize = 13.sp, color = Danger) }
+                }
+            }
+        }
     }
 }
 

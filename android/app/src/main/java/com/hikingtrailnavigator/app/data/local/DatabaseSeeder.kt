@@ -1,6 +1,7 @@
 package com.hikingtrailnavigator.app.data.local
 
 import com.hikingtrailnavigator.app.data.local.entity.toDomain
+import com.hikingtrailnavigator.app.data.local.dao.HazardReportDao
 import com.hikingtrailnavigator.app.data.repository.EmergencyContactRepository
 import com.hikingtrailnavigator.app.data.repository.TrailRepository
 import com.hikingtrailnavigator.app.data.repository.UserRepository
@@ -12,7 +13,8 @@ import javax.inject.Singleton
 class DatabaseSeeder @Inject constructor(
     private val trailRepository: TrailRepository,
     private val emergencyContactRepository: EmergencyContactRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val hazardReportDao: HazardReportDao
 ) {
     suspend fun seedIfEmpty() {
         // Seed trails
@@ -26,6 +28,11 @@ class DatabaseSeeder @Inject constructor(
 
         // FR-210: Seed low activity zones
         trailRepository.insertLowActivityZones(SeedData.lowActivityZones)
+
+        // Seed hazard reports
+        SeedData.sampleHazardReports.forEach { report ->
+            hazardReportDao.insert(report)
+        }
 
         // Seed default emergency contacts (only if none exist)
         val contactCount = emergencyContactRepository.getContactCount()

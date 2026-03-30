@@ -17,6 +17,7 @@ class HikerDataReader(private val resolver: ContentResolver) {
         val TRAILS_URI: Uri = Uri.parse("content://$AUTHORITY/trails")
         val ACTIVE_HIKERS_URI: Uri = Uri.parse("content://$AUTHORITY/active_hikers")
         val NOTIFICATIONS_URI: Uri = Uri.parse("content://$AUTHORITY/notifications")
+        val HAZARD_REPORTS_URI: Uri = Uri.parse("content://$AUTHORITY/hazard_reports")
     }
 
     fun getSosAlerts(): List<SosAlert> {
@@ -102,6 +103,38 @@ class HikerDataReader(private val resolver: ContentResolver) {
         return hikers
     }
 
+    fun getHazardReports(): List<HazardReport> {
+        val reports = mutableListOf<HazardReport>()
+        val cursor = resolver.query(HAZARD_REPORTS_URI, null, null, null, null) ?: return reports
+        cursor.use {
+            while (it.moveToNext()) {
+                reports.add(HazardReport(
+                    id = it.getString("id"),
+                    type = it.getString("type"),
+                    severity = it.getString("severity"),
+                    latitude = it.getDouble("latitude"),
+                    longitude = it.getDouble("longitude"),
+                    description = it.getString("description"),
+                    reportedAt = it.getLong("reportedAt"),
+                    confirmations = it.getInt("confirmations"),
+                    expiresAt = it.getLong("expiresAt"),
+                    isVerified = it.getInt("isVerified") == 1
+                ))
+            }
+        }
+        return reports
+    }
+
+    fun verifyHazard(hazardId: String) {
+        val uri = Uri.parse("content://$AUTHORITY/hazard_reports/verify/$hazardId")
+        resolver.update(uri, ContentValues(), null, null)
+    }
+
+    fun rejectHazard(hazardId: String) {
+        val uri = Uri.parse("content://$AUTHORITY/hazard_reports/reject/$hazardId")
+        resolver.update(uri, ContentValues(), null, null)
+    }
+
     fun resolveSosAlert(alertId: String) {
         val uri = Uri.parse("content://$AUTHORITY/sos_alerts/resolve/$alertId")
         resolver.update(uri, ContentValues(), null, null)
@@ -177,4 +210,17 @@ data class ActiveHiker(
     val lastLat: Double,
     val lastLng: Double,
     val missedCheckIns: Int
+)
+
+data class HazardReport(
+    val id: String,
+    val type: String,
+    val severity: String,
+    val latitude: Double,
+    val longitude: Double,
+    val description: String,
+    val reportedAt: Long,
+    val confirmations: Int,
+    val expiresAt: Long,
+    val isVerified: Boolean
 )

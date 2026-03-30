@@ -51,8 +51,9 @@ class SosNotificationService @Inject constructor(
             putExtra("action", "OPEN_ADMIN_SOS")
             putExtra("alert_type", alertType)
         }
+        val requestCode = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
         val pendingIntent = PendingIntent.getActivity(
-            context, SOS_NOTIFICATION_ID, intent,
+            context, requestCode, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -78,8 +79,9 @@ class SosNotificationService @Inject constructor(
             .setVibrate(longArrayOf(0, 500, 200, 500, 200, 500))
             .build()
 
+        val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
         val manager = context.getSystemService(NotificationManager::class.java)
-        manager.notify(SOS_NOTIFICATION_ID, notification)
+        manager.notify(notificationId, notification)
     }
 
     private fun createSosChannel() {

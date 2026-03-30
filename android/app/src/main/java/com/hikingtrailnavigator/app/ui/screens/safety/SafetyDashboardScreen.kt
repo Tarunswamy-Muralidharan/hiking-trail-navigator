@@ -38,20 +38,40 @@ fun SafetyDashboardScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Connection status
+            // Connection status - prominent offline warning
             if (!uiState.isOnline) {
                 item {
                     Card(
-                        colors = CardDefaults.cardColors(containerColor = WarningLight),
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Danger),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Row(
-                            modifier = Modifier.padding(12.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(Icons.Default.WifiOff, null, tint = Warning)
-                            Spacer(Modifier.width(8.dp))
-                            Text("You are offline. Some features may be limited.", fontSize = 14.sp)
+                            Icon(
+                                Icons.Default.WifiOff,
+                                contentDescription = "No connectivity",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    "You are offline",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    "No network coverage in this area",
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    fontSize = 13.sp
+                                )
+                            }
                         }
                     }
                 }

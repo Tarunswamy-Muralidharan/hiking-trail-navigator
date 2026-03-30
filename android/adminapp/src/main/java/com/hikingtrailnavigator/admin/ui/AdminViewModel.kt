@@ -17,6 +17,7 @@ data class AdminUiState(
     val activeSessions: List<HikeSession> = emptyList(),
     val trails: List<Trail> = emptyList(),
     val activeHikers: List<ActiveHiker> = emptyList(),
+    val hazardReports: List<HazardReport> = emptyList(),
     val isLoading: Boolean = true,
     val error: String = "",
     val lastRefresh: Long = 0,
@@ -48,6 +49,7 @@ class AdminViewModel(application: Application) : AndroidViewModel(application) {
                 val sessions = reader.getHikeSessions()
                 val trails = reader.getTrails()
                 val hikers = reader.getActiveHikers()
+                val hazards = reader.getHazardReports()
 
                 _uiState.update {
                     it.copy(
@@ -55,6 +57,7 @@ class AdminViewModel(application: Application) : AndroidViewModel(application) {
                         activeSessions = sessions,
                         trails = trails,
                         activeHikers = hikers,
+                        hazardReports = hazards,
                         isLoading = false,
                         error = "",
                         lastRefresh = System.currentTimeMillis()
@@ -81,6 +84,20 @@ class AdminViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteTrail(trailId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             reader.deleteTrail(trailId)
+            refresh()
+        }
+    }
+
+    fun verifyHazard(hazardId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            reader.verifyHazard(hazardId)
+            refresh()
+        }
+    }
+
+    fun rejectHazard(hazardId: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            reader.rejectHazard(hazardId)
             refresh()
         }
     }

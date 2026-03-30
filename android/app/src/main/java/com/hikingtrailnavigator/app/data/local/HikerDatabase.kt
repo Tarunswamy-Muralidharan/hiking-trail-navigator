@@ -26,7 +26,7 @@ import com.hikingtrailnavigator.app.data.local.entity.*
         // FR-210: Low activity zones
         LowActivityZoneEntity::class
     ],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

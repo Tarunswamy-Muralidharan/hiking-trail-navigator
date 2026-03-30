@@ -188,6 +188,40 @@ fun ActiveHikeScreen(
         // Warning cards stacked below stats
         var warningOffset = 0
 
+        // Real-time device offline banner (ConnectivityService)
+        if (uiState.isDeviceOffline) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(top = (185 + warningOffset).dp)
+                    .align(Alignment.TopCenter),
+                colors = CardDefaults.cardColors(containerColor = Danger)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.WifiOff, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "You are offline",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp
+                        )
+                        Text(
+                            "No network coverage in this area",
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+            warningOffset += 60
+        }
+
         // Deviation warning (FR-205)
         if (uiState.isDeviating) {
             Card(

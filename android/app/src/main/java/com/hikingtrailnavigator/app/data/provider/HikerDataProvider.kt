@@ -25,6 +25,9 @@ class HikerDataProvider : ContentProvider() {
         private const val SOS_ALERT_RESOLVE = 6
         private const val TRAIL_DELETE = 7
         private const val TRAILS_INSERT = 8
+        private const val HAZARD_REPORTS = 9
+        private const val HAZARD_VERIFY = 10
+        private const val HAZARD_REJECT = 11
 
         private val uriMatcher = UriMatcher(UriMatcher.NO_MATCH).apply {
             addURI(AUTHORITY, "sos_alerts", SOS_ALERTS)
@@ -35,6 +38,9 @@ class HikerDataProvider : ContentProvider() {
             addURI(AUTHORITY, "sos_alerts/resolve/*", SOS_ALERT_RESOLVE)
             addURI(AUTHORITY, "trails/delete/*", TRAIL_DELETE)
             addURI(AUTHORITY, "trails/insert", TRAILS_INSERT)
+            addURI(AUTHORITY, "hazard_reports", HAZARD_REPORTS)
+            addURI(AUTHORITY, "hazard_reports/verify/*", HAZARD_VERIFY)
+            addURI(AUTHORITY, "hazard_reports/reject/*", HAZARD_REJECT)
         }
     }
 
@@ -70,6 +76,9 @@ class HikerDataProvider : ContentProvider() {
             NOTIFICATIONS -> db.query(
                 "SELECT * FROM notifications ORDER BY timestamp DESC"
             )
+            HAZARD_REPORTS -> db.query(
+                "SELECT * FROM hazard_reports ORDER BY reportedAt DESC"
+            )
             else -> null
         }
     }
@@ -82,6 +91,18 @@ class HikerDataProvider : ContentProvider() {
             SOS_ALERT_RESOLVE -> {
                 val alertId = uri.lastPathSegment ?: return 0
                 db.execSQL("UPDATE sos_alerts SET isResolved = 1 WHERE id = ?", arrayOf(alertId))
+                context?.contentResolver?.notifyChange(uri, null)
+                1
+            }
+            HAZARD_VERIFY -> {
+                val hazardId = uri.lastPathSegment ?: return 0
+                db.execSQL("UPDATE hazard_reports SET isVerified = 1 WHERE id = ?", arrayOf(hazardId))
+                context?.contentResolver?.notifyChange(uri, null)
+                1
+            }
+            HAZARD_REJECT -> {
+                val hazardId = uri.lastPathSegment ?: return 0
+                db.execSQL("UPDATE hazard_reports SET isVerified = 0 WHERE id = ?", arrayOf(hazardId))
                 context?.contentResolver?.notifyChange(uri, null)
                 1
             }
@@ -113,6 +134,7 @@ class HikerDataProvider : ContentProvider() {
             TRAILS -> "vnd.android.cursor.dir/trail"
             ACTIVE_HIKERS -> "vnd.android.cursor.dir/active_hiker"
             NOTIFICATIONS -> "vnd.android.cursor.dir/notification"
+            HAZARD_REPORTS -> "vnd.android.cursor.dir/hazard_report"
             else -> null
         }
     }

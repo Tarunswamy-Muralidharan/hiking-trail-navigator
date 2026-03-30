@@ -2,6 +2,7 @@ package com.hikingtrailnavigator.app.data.local
 
 import com.hikingtrailnavigator.app.data.local.entity.DangerZoneEntity
 import com.hikingtrailnavigator.app.data.local.entity.EmergencyContactEntity
+import com.hikingtrailnavigator.app.data.local.entity.HazardReportEntity
 import com.hikingtrailnavigator.app.data.local.entity.LowActivityZoneEntity
 import com.hikingtrailnavigator.app.data.local.entity.NoCoverageZoneEntity
 import com.hikingtrailnavigator.app.domain.model.*
@@ -443,6 +444,18 @@ object SeedData {
             centerLat = 11.3040, centerLng = 76.9250, radius = 200.0,
             type = "Terrain", severity = "Medium",
             description = "Trail crosses near Nilgiri Mountain Railway tracks. Watch for trains.", verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_15", name = "Steep Construction Area",
+            centerLat = 11.0638, centerLng = 77.0935, radius = 40.0,
+            type = "Terrain", severity = "High",
+            description = "Active construction with loose debris and uneven ground. Watch your step.", verified = true
+        ),
+        DangerZoneEntity(
+            id = "dz_16", name = "Stray Dog Territory",
+            centerLat = 11.0658, centerLng = 77.0922, radius = 30.0,
+            type = "Wildlife", severity = "Medium",
+            description = "Pack of stray dogs frequently spotted. Avoid during early morning/evening.", verified = true
         )
     )
 
@@ -466,6 +479,11 @@ object SeedData {
             id = "nc_4", name = "Grass Hills Interior",
             centerLat = 10.3350, centerLng = 76.8630, radius = 5000.0,
             description = "Zero connectivity in Anamalai grasslands. Carry emergency whistle and flares."
+        ),
+        NoCoverageZoneEntity(
+            id = "nc_5", name = "Campus Basement Dead Zone",
+            centerLat = 11.0645, centerLng = 77.0938, radius = 60.0,
+            description = "Underground basement area with no cellular signal"
         )
     )
 
@@ -500,6 +518,93 @@ object SeedData {
             centerLat = 10.3800, centerLng = 76.9200, radius = 3500.0,
             activityLevel = "unexplored",
             description = "Remote corridor between Valparai estates. No established paths."
+        ),
+        LowActivityZoneEntity(
+            id = "la_6", name = "Unexplored Back Campus Path",
+            centerLat = 11.0635, centerLng = 77.0925, radius = 80.0,
+            activityLevel = "unexplored",
+            description = "Rarely visited path behind campus buildings. No trail data available."
+        ),
+        LowActivityZoneEntity(
+            id = "la_7", name = "Low-Traffic Evening Route",
+            centerLat = 11.0660, centerLng = 77.0920, radius = 100.0,
+            activityLevel = "low",
+            description = "This route has very few hikers. Limited safety data."
+        )
+    )
+
+    val sampleHazardReports = listOf(
+        HazardReportEntity(
+            id = "hr_1",
+            type = "Wildlife",
+            severity = "High",
+            latitude = 11.0648,
+            longitude = 77.0930,
+            description = "Pack of monkeys blocking the path near the library. They snatch food and bags.",
+            reportedAt = System.currentTimeMillis() - 86400000, // 1 day ago
+            confirmations = 4,
+            expiresAt = System.currentTimeMillis() + 518400000, // 6 days from now
+            isVerified = false
+        ),
+        HazardReportEntity(
+            id = "hr_2",
+            type = "Trail Damage",
+            severity = "Medium",
+            latitude = 11.0642,
+            longitude = 77.0932,
+            description = "Broken tiles and exposed rebar on the walkway. Risk of tripping.",
+            reportedAt = System.currentTimeMillis() - 172800000, // 2 days ago
+            confirmations = 2,
+            expiresAt = System.currentTimeMillis() + 432000000, // 5 days from now
+            isVerified = true
+        ),
+        HazardReportEntity(
+            id = "hr_3",
+            type = "Flooding",
+            severity = "High",
+            latitude = 10.9930,
+            longitude = 76.7750,
+            description = "Water logging after rain near Vellingiri base. Slippery rocks and ankle-deep water.",
+            reportedAt = System.currentTimeMillis() - 43200000, // 12 hours ago
+            confirmations = 5,
+            expiresAt = System.currentTimeMillis() + 561600000,
+            isVerified = true
+        ),
+        HazardReportEntity(
+            id = "hr_4",
+            type = "Landslide",
+            severity = "Critical",
+            latitude = 10.9870,
+            longitude = 76.7690,
+            description = "Fresh rockslide debris blocking 60% of trail. Loose boulders still falling.",
+            reportedAt = System.currentTimeMillis() - 7200000, // 2 hours ago
+            confirmations = 1,
+            expiresAt = System.currentTimeMillis() + 604800000,
+            isVerified = false
+        ),
+        HazardReportEntity(
+            id = "hr_5",
+            type = "Poor Visibility",
+            severity = "Medium",
+            latitude = 10.4750,
+            longitude = 76.8270,
+            description = "Dense fog reducing visibility to under 10 meters. Trail markers not visible.",
+            reportedAt = System.currentTimeMillis() - 14400000, // 4 hours ago
+            confirmations = 3,
+            expiresAt = System.currentTimeMillis() + 590400000,
+            isVerified = false
+        ),
+        HazardReportEntity(
+            id = "hr_6",
+            type = "Fallen Tree",
+            severity = "Low",
+            latitude = 11.0655,
+            longitude = 77.0927,
+            description = "Small fallen branch partially blocking the campus path near seminar hall.",
+            reportedAt = System.currentTimeMillis() - 259200000, // 3 days ago
+            confirmations = 1,
+            expiresAt = System.currentTimeMillis() + 345600000,
+            isVerified = false
         )
     )
 
