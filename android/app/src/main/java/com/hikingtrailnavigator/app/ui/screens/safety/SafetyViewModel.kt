@@ -13,6 +13,7 @@ import com.hikingtrailnavigator.app.service.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import android.util.Log
 import java.util.UUID
 import javax.inject.Inject
 
@@ -139,76 +140,94 @@ class SOSViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            // Step 2-3: getCurrentLocation() from Location
-            val loc = location ?: emergencyService.getCurrentLocation()
-            _uiState.update {
-                it.copy(
-                    currentLocation = loc,
-                    isLocating = false,
-                    sosMessage = if (loc != null)
-                        "SOS sent with GPS: ${String.format("%.5f", loc.latitude)}, ${String.format("%.5f", loc.longitude)}"
-                    else "SOS sent! (Location unavailable)"
-                )
-            }
-
-            val actualLoc = loc ?: LatLng(0.0, 0.0)
-            val hikerName = sessionManager.getHikerName()
-
-            // Step 4: createSOSAlert(currentCoordinates)
-            val alertId = UUID.randomUUID().toString()
-            val sosAlert = SOSAlert(
-                alertId = alertId,
-                hikerId = sessionManager.getUserId(),
-                hikerName = hikerName,
-                trailId = "", trailName = "Unknown",
-                alertType = "SOS_BUTTON",
-                latitude = actualLoc.latitude,
-                longitude = actualLoc.longitude,
-                createdTime = System.currentTimeMillis(),
-                status = "active",
-                message = "Hiker pressed SOS button"
-            )
-
-            // Step 5: logAlert() - persist to database
-            sosAlertDao.insert(sosAlert.toSosEntity())
-
-            // Step 1: Send SMS to all contacts + forest officers (works offline)
-            emergencyService.sendSosToAllContacts(actualLoc)
-            val count = contactRepository.getContactCount() + 2
-            _uiState.update { it.copy(contactsNotified = count) }
-
-            // Step 6: sendAlert(forestOfficer) to Notification
-            val notification = Notification(
-                notificationId = UUID.randomUUID().toString(),
-                alertId = alertId,
-                recipientId = "officer_1",
-                message = "SOS ALERT: $hikerName needs help! GPS: ${actualLoc.latitude}, ${actualLoc.longitude}",
-                timestamp = System.currentTimeMillis(),
-                status = "sent"
-            )
-            notificationRepository.sendNotification(notification)
-
-            // Step 7: notifySOS(alertDetails) to ForestOfficer - Android notification
-            sosNotificationService.sendSosAlert(
-                hikerName = hikerName,
-                alertType = "SOS_BUTTON",
-                latitude = actualLoc.latitude,
-                longitude = actualLoc.longitude,
-                message = sosAlert.message
-            )
-
-            // Step 9: sendConfirmation() back to Hiker
-            _uiState.update {
-                it.copy(sosMessage = "SOS confirmed! Forest officer notified. $count contacts alerted.")
-            }
-
-            // Try API call if online (non-blocking)
             try {
-                api.triggerSos(
-                    SosRequest(userId = sessionManager.getUserId().ifEmpty { "local_user" },
-                        latitude = actualLoc.latitude, longitude = actualLoc.longitude)
+                Log.d("SOS", "=== SOS ACTIVATION STARTED ===")
+
+                // Step 2-3: getCurrentLocation() from Location
+                val loc = location ?: emergencyService.getCurrentLocation()
+                Log.d("SOS", "Location: $loc")
+                _uiState.update {
+                    it.copy(
+                        currentLocation = loc,
+                        isLocating = false,
+                        sosMessage = if (loc != null)
+                            "SOS sent with GPS: ${String.format("%.5f", loc.latitude)}, ${String.format("%.5f", loc.longitude)}"
+                        else "SOS sent! (Location unavailable)"
+                    )
+                }
+
+                val actualLoc = loc ?: LatLng(0.0, 0.0)
+                val hikerName = sessionManager.getHikerName()
+                Log.d("SOS", "Hiker: $hikerName, Loc: ${actualLoc.latitude}, ${actualLoc.longitude}")
+
+                // Step 4: createSOSAlert(currentCoordinates)
+                val alertId = UUID.randomUUID().toString()
+                val sosAlert = SOSAlert(
+                    alertId = alertId,
+                    hikerId = sessionManager.getUserId(),
+                    hikerName = hikerName,
+                    trailId = "", trailName = "Unknown",
+                    alertType = "SOS_BUTTON",
+                    latitude = actualLoc.latitude,
+                    longitude = actualLoc.longitude,
+                    createdTime = System.currentTimeMillis(),
+                    status = "active",
+                    message = "Hiker pressed SOS button"
                 )
-            } catch (_: Exception) {}
+
+                // Step 5: logAlert() - persist to database
+                Log.d("SOS", "Inserting SOS alert to database: $alertId")
+                sosAlertDao.insert(sosAlert.toSosEntity())
+                Log.d("SOS", "SOS alert inserted successfully!")
+
+                // Step 1: Send SMS to all contacts + forest officers (works offline)
+                try {
+                    emergencyService.sendSosToAllContacts(actualLoc)
+                } catch (e: Exception) {
+                    Log.e("SOS", "SMS send failed (non-fatal): ${e.message}")
+                }
+                val count = contactRepository.getContactCount() + 2
+                _uiState.update { it.copy(contactsNotified = count) }
+
+                // Step 6: sendAlert(forestOfficer) to Notification
+                val notification = Notification(
+                    notificationId = UUID.randomUUID().toString(),
+                    alertId = alertId,
+                    recipientId = "officer_1",
+                    message = "SOS ALERT: $hikerName needs help! GPS: ${actualLoc.latitude}, ${actualLoc.longitude}",
+                    timestamp = System.currentTimeMillis(),
+                    status = "sent"
+                )
+                notificationRepository.sendNotification(notification)
+
+                // Step 7: notifySOS(alertDetails) to ForestOfficer - Android notification
+                sosNotificationService.sendSosAlert(
+                    hikerName = hikerName,
+                    alertType = "SOS_BUTTON",
+                    latitude = actualLoc.latitude,
+                    longitude = actualLoc.longitude,
+                    message = sosAlert.message
+                )
+
+                // Step 9: sendConfirmation() back to Hiker
+                _uiState.update {
+                    it.copy(sosMessage = "SOS confirmed! Forest officer notified. $count contacts alerted.")
+                }
+                Log.d("SOS", "=== SOS ACTIVATION COMPLETE ===")
+
+                // Try API call if online (non-blocking)
+                try {
+                    api.triggerSos(
+                        SosRequest(userId = sessionManager.getUserId().ifEmpty { "local_user" },
+                            latitude = actualLoc.latitude, longitude = actualLoc.longitude)
+                    )
+                } catch (_: Exception) {}
+            } catch (e: Exception) {
+                Log.e("SOS", "SOS activation FAILED: ${e.message}", e)
+                _uiState.update {
+                    it.copy(sosMessage = "SOS alert saved locally. ${e.message}")
+                }
+            }
         }
     }
 
@@ -224,61 +243,72 @@ class SOSViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
-            val loc = location ?: emergencyService.getCurrentLocation()
-            _uiState.update {
-                it.copy(
-                    currentLocation = loc,
-                    isLocating = false,
-                    sosMessage = "Silent SOS sent. Contacts notified discreetly."
-                )
-            }
-
-            val actualLoc = loc ?: LatLng(0.0, 0.0)
-            val hikerName = sessionManager.getHikerName()
-
-            emergencyService.sendSosToAllContacts(actualLoc)
-            val count = contactRepository.getContactCount() + 2
-            _uiState.update { it.copy(contactsNotified = count) }
-
-            val alertId = UUID.randomUUID().toString()
-            val sosAlert = SOSAlert(
-                alertId = alertId,
-                hikerId = sessionManager.getUserId(),
-                hikerName = hikerName,
-                trailId = "", trailName = "Unknown",
-                alertType = "SOS_BUTTON",
-                latitude = actualLoc.latitude, longitude = actualLoc.longitude,
-                createdTime = System.currentTimeMillis(),
-                status = "active",
-                message = "Silent SOS activated"
-            )
-            sosAlertDao.insert(sosAlert.toSosEntity())
-
-            // Persist notification (UML: Notification entity)
-            notificationRepository.sendNotification(
-                Notification(
-                    notificationId = UUID.randomUUID().toString(),
-                    alertId = alertId,
-                    recipientId = "officer_1",
-                    message = "SILENT SOS: $hikerName needs help! GPS: ${actualLoc.latitude}, ${actualLoc.longitude}",
-                    status = "sent"
-                )
-            )
-
-            sosNotificationService.sendSosAlert(
-                hikerName = hikerName,
-                alertType = "SOS_BUTTON",
-                latitude = actualLoc.latitude,
-                longitude = actualLoc.longitude,
-                message = sosAlert.message
-            )
-
             try {
-                api.triggerSilentSos(
-                    SosRequest(userId = sessionManager.getUserId().ifEmpty { "local_user" },
-                        latitude = actualLoc.latitude, longitude = actualLoc.longitude)
+                Log.d("SOS", "=== SILENT SOS STARTED ===")
+                val loc = location ?: emergencyService.getCurrentLocation()
+                _uiState.update {
+                    it.copy(
+                        currentLocation = loc,
+                        isLocating = false,
+                        sosMessage = "Silent SOS sent. Contacts notified discreetly."
+                    )
+                }
+
+                val actualLoc = loc ?: LatLng(0.0, 0.0)
+                val hikerName = sessionManager.getHikerName()
+
+                // Insert to DB FIRST before anything else
+                val alertId = UUID.randomUUID().toString()
+                val sosAlert = SOSAlert(
+                    alertId = alertId,
+                    hikerId = sessionManager.getUserId(),
+                    hikerName = hikerName,
+                    trailId = "", trailName = "Unknown",
+                    alertType = "SOS_BUTTON",
+                    latitude = actualLoc.latitude, longitude = actualLoc.longitude,
+                    createdTime = System.currentTimeMillis(),
+                    status = "active",
+                    message = "Silent SOS activated"
                 )
-            } catch (_: Exception) {}
+                sosAlertDao.insert(sosAlert.toSosEntity())
+                Log.d("SOS", "Silent SOS alert inserted: $alertId")
+
+                try {
+                    emergencyService.sendSosToAllContacts(actualLoc)
+                } catch (e: Exception) {
+                    Log.e("SOS", "SMS send failed (non-fatal): ${e.message}")
+                }
+                val count = contactRepository.getContactCount() + 2
+                _uiState.update { it.copy(contactsNotified = count) }
+
+                notificationRepository.sendNotification(
+                    Notification(
+                        notificationId = UUID.randomUUID().toString(),
+                        alertId = alertId,
+                        recipientId = "officer_1",
+                        message = "SILENT SOS: $hikerName needs help! GPS: ${actualLoc.latitude}, ${actualLoc.longitude}",
+                        status = "sent"
+                    )
+                )
+
+                sosNotificationService.sendSosAlert(
+                    hikerName = hikerName,
+                    alertType = "SOS_BUTTON",
+                    latitude = actualLoc.latitude,
+                    longitude = actualLoc.longitude,
+                    message = sosAlert.message
+                )
+                Log.d("SOS", "=== SILENT SOS COMPLETE ===")
+
+                try {
+                    api.triggerSilentSos(
+                        SosRequest(userId = sessionManager.getUserId().ifEmpty { "local_user" },
+                            latitude = actualLoc.latitude, longitude = actualLoc.longitude)
+                    )
+                } catch (_: Exception) {}
+            } catch (e: Exception) {
+                Log.e("SOS", "Silent SOS FAILED: ${e.message}", e)
+            }
         }
     }
 
