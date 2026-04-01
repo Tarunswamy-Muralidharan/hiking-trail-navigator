@@ -23,6 +23,7 @@ import com.hikingtrailnavigator.app.ui.theme.*
 fun ActiveHikeScreen(
     onBack: () -> Unit,
     onHikeComplete: () -> Unit,
+    onSosClick: () -> Unit,
     viewModel: ActiveHikeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -410,7 +411,7 @@ fun ActiveHikeScreen(
                 Icon(Icons.Default.Stop, null, tint = Color.White, modifier = Modifier.size(32.dp))
             }
             FloatingActionButton(
-                onClick = { /* Navigate to SOS */ },
+                onClick = onSosClick,
                 containerColor = Danger.copy(alpha = 0.8f)
             ) {
                 Text("SOS", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)

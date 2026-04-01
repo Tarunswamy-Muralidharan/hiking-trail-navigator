@@ -28,6 +28,8 @@ class HikerDataProvider : ContentProvider() {
         private const val HAZARD_REPORTS = 9
         private const val HAZARD_VERIFY = 10
         private const val HAZARD_REJECT = 11
+        private const val ROUTE_WARNINGS = 12
+        private const val ROUTE_WARNING_DEACTIVATE = 13
 
         private val uriMatcher = UriMatcher(UriMatcher.NO_MATCH).apply {
             addURI(AUTHORITY, "sos_alerts", SOS_ALERTS)
@@ -41,6 +43,8 @@ class HikerDataProvider : ContentProvider() {
             addURI(AUTHORITY, "hazard_reports", HAZARD_REPORTS)
             addURI(AUTHORITY, "hazard_reports/verify/*", HAZARD_VERIFY)
             addURI(AUTHORITY, "hazard_reports/reject/*", HAZARD_REJECT)
+            addURI(AUTHORITY, "route_warnings", ROUTE_WARNINGS)
+            addURI(AUTHORITY, "route_warnings/deactivate/*", ROUTE_WARNING_DEACTIVATE)
         }
     }
 
@@ -79,6 +83,9 @@ class HikerDataProvider : ContentProvider() {
             HAZARD_REPORTS -> db.query(
                 "SELECT * FROM hazard_reports ORDER BY reportedAt DESC"
             )
+            ROUTE_WARNINGS -> db.query(
+                "SELECT * FROM route_warnings WHERE isActive = 1 ORDER BY reportedAt DESC"
+            )
             else -> null
         }
     }
@@ -103,6 +110,12 @@ class HikerDataProvider : ContentProvider() {
             HAZARD_REJECT -> {
                 val hazardId = uri.lastPathSegment ?: return 0
                 db.execSQL("UPDATE hazard_reports SET isVerified = 0 WHERE id = ?", arrayOf(hazardId))
+                context?.contentResolver?.notifyChange(uri, null)
+                1
+            }
+            ROUTE_WARNING_DEACTIVATE -> {
+                val warningId = uri.lastPathSegment ?: return 0
+                db.execSQL("UPDATE route_warnings SET isActive = 0 WHERE id = ?", arrayOf(warningId))
                 context?.contentResolver?.notifyChange(uri, null)
                 1
             }
@@ -135,6 +148,7 @@ class HikerDataProvider : ContentProvider() {
             ACTIVE_HIKERS -> "vnd.android.cursor.dir/active_hiker"
             NOTIFICATIONS -> "vnd.android.cursor.dir/notification"
             HAZARD_REPORTS -> "vnd.android.cursor.dir/hazard_report"
+            ROUTE_WARNINGS -> "vnd.android.cursor.dir/route_warning"
             else -> null
         }
     }

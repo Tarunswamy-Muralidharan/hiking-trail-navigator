@@ -448,6 +448,38 @@ fun HazardsTab(state: AdminUiState, viewModel: AdminViewModel) {
                 HazardReportCard(report = report, onVerify = null, onReject = null)
             }
         }
+
+        // Route Warnings (crowd-sourced)
+        item {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "Route Warnings — Crowd-Sourced (${state.routeWarnings.size})",
+                fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color(0xFFE65100)
+            )
+        }
+
+        if (state.routeWarnings.isEmpty()) {
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.CheckCircle, null, tint = Primary)
+                        Spacer(Modifier.width(8.dp))
+                        Text("No active route warnings", color = Primary, fontWeight = FontWeight.Medium)
+                    }
+                }
+            }
+        }
+
+        items(state.routeWarnings) { warning ->
+            RouteWarningCard(
+                warning = warning,
+                onDeactivate = { viewModel.deactivateRouteWarning(warning.id) }
+            )
+        }
     }
 }
 
@@ -527,6 +559,65 @@ fun HazardReportCard(
                     ) { Text("Reject", fontSize = 13.sp, color = Danger) }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun RouteWarningCard(warning: RouteWarning, onDeactivate: () -> Unit) {
+    val timeSince = (System.currentTimeMillis() - warning.reportedAt) / 60000
+    val timeStr = when {
+        timeSince < 1 -> "Just now"
+        timeSince < 60 -> "${timeSince}m ago"
+        timeSince < 1440 -> "${timeSince / 60}h ago"
+        else -> "${timeSince / 1440}d ago"
+    }
+
+    val typeColor = when (warning.warningType) {
+        "Landslide", "Trail Blocked" -> Danger
+        "Flooding", "Dangerous" -> Color(0xFFE65100)
+        "Wildlife" -> Warning
+        else -> OnSurfaceVariant
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = typeColor.copy(alpha = 0.08f)),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.NearMe, null, tint = typeColor, modifier = Modifier.size(24.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Column {
+                        Text(warning.warningType, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = typeColor)
+                        Text("by ${warning.reportedBy}", fontSize = 12.sp, color = OnSurfaceVariant)
+                    }
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(timeStr, fontSize = 12.sp, color = typeColor, fontWeight = FontWeight.Medium)
+                    Text("${warning.upvotes} upvote(s)", fontSize = 10.sp, color = OnSurfaceVariant)
+                }
+            }
+
+            Spacer(Modifier.height(6.dp))
+            Text(warning.description, fontSize = 13.sp, color = OnSurfaceVariant)
+            Text(
+                "GPS: ${String.format("%.5f", warning.latitude)}, ${String.format("%.5f", warning.longitude)}",
+                fontSize = 12.sp, color = OnSurfaceVariant
+            )
+
+            Spacer(Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = onDeactivate,
+                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.fillMaxWidth().height(36.dp)
+            ) { Text("Deactivate Warning", fontSize = 13.sp, color = Danger) }
         }
     }
 }

@@ -168,7 +168,8 @@ fun HikerApp() {
                         if (!popped) {
                             navController.popBackStack(Screen.Home.route, false)
                         }
-                    }
+                    },
+                    onSosClick = { navController.navigate(Screen.SOS.route) }
                 )
             }
 

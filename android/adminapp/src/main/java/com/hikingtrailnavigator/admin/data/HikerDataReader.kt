@@ -18,6 +18,7 @@ class HikerDataReader(private val resolver: ContentResolver) {
         val ACTIVE_HIKERS_URI: Uri = Uri.parse("content://$AUTHORITY/active_hikers")
         val NOTIFICATIONS_URI: Uri = Uri.parse("content://$AUTHORITY/notifications")
         val HAZARD_REPORTS_URI: Uri = Uri.parse("content://$AUTHORITY/hazard_reports")
+        val ROUTE_WARNINGS_URI: Uri = Uri.parse("content://$AUTHORITY/route_warnings")
     }
 
     fun getSosAlerts(): List<SosAlert> {
@@ -125,6 +126,32 @@ class HikerDataReader(private val resolver: ContentResolver) {
         return reports
     }
 
+    fun getRouteWarnings(): List<RouteWarning> {
+        val warnings = mutableListOf<RouteWarning>()
+        val cursor = resolver.query(ROUTE_WARNINGS_URI, null, null, null, null) ?: return warnings
+        cursor.use {
+            while (it.moveToNext()) {
+                warnings.add(RouteWarning(
+                    id = it.getString("id"),
+                    trailId = it.getString("trailId"),
+                    latitude = it.getDouble("latitude"),
+                    longitude = it.getDouble("longitude"),
+                    warningType = it.getString("warningType"),
+                    description = it.getString("description"),
+                    reportedBy = it.getString("reportedBy"),
+                    reportedAt = it.getLong("reportedAt"),
+                    upvotes = it.getInt("upvotes")
+                ))
+            }
+        }
+        return warnings
+    }
+
+    fun deactivateRouteWarning(warningId: String) {
+        val uri = Uri.parse("content://$AUTHORITY/route_warnings/deactivate/$warningId")
+        resolver.update(uri, ContentValues(), null, null)
+    }
+
     fun verifyHazard(hazardId: String) {
         val uri = Uri.parse("content://$AUTHORITY/hazard_reports/verify/$hazardId")
         resolver.update(uri, ContentValues(), null, null)
@@ -223,4 +250,16 @@ data class HazardReport(
     val confirmations: Int,
     val expiresAt: Long,
     val isVerified: Boolean
+)
+
+data class RouteWarning(
+    val id: String,
+    val trailId: String,
+    val latitude: Double,
+    val longitude: Double,
+    val warningType: String,
+    val description: String,
+    val reportedBy: String,
+    val reportedAt: Long,
+    val upvotes: Int
 )
